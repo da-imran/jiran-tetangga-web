@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 type DashboardCardProps = {
   title: string;
@@ -28,6 +30,12 @@ export function DashboardCard({ title, description, icon, children, className, c
       <CardContent className={cn("flex-1", contentClassName)}>
         {children}
       </CardContent>
+      <CardFooter>
+        <Button variant="ghost" className="w-full">
+          See more
+          <ArrowRight />
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
