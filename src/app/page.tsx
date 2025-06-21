@@ -12,12 +12,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const roadDisruptions = [
   { id: 1, title: "Jalan Cenderai Water Pipe Burst", time: "2 hours ago" },
   { id: 2, title: "Accident near Taman Rinting exit", time: "5 hours ago" },
   { id: 3, title: "Roadworks on Jalan Merbuk until 5 PM", time: "8 hours ago" },
+  { id: 4, title: "Fallen tree on Jalan Delima", time: "1 day ago" },
 ];
 
 const localEvents = [
@@ -41,18 +42,25 @@ const parkStatus = [
 export default function Home() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedImageData, setSelectedImageData] = useState<{ src: string; alt: string; hint: string } | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsContent, setDetailsContent] = useState<{ title: string; description: string; content: React.ReactNode } | null>(null);
 
   const handleViewImage = (src: string, alt: string, hint: string) => {
     setSelectedImageData({ src, alt, hint });
-    setDialogOpen(true);
+    setImageDialogOpen(true);
+  };
+
+  const handleSeeMore = (title: string, description: string, content: React.ReactNode) => {
+    setDetailsContent({ title, description, content });
+    setDetailsOpen(true);
   };
   
   return (
     <div className="flex min-h-screen w-full flex-col">
       <AppHeader />
       <main className="flex-1 p-4 md:p-8">
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>{selectedImageData?.alt || 'Image Preview'}</DialogTitle>
@@ -69,14 +77,39 @@ export default function Home() {
             )}
           </DialogContent>
         </Dialog>
+
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle>{detailsContent?.title}</DialogTitle>
+              <DialogDescription>{detailsContent?.description}</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto pr-2">
+              {detailsContent?.content}
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <div className="grid gap-6 md:grid-cols-2">
           <DashboardCard
             title="Road Disruptions"
             icon={<TrafficCone className="h-6 w-6 text-destructive" />}
             description="Latest updates on traffic and road closures."
+            onSeeMore={() => handleSeeMore(
+              "All Road Disruptions",
+              "Here are all the recent road disruptions.",
+              <ul className="space-y-4">
+                {roadDisruptions.map((item) => (
+                  <li key={item.id} className="flex items-start justify-between rounded-md border p-4">
+                    <span className="text-sm font-medium">{item.title}</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">{item.time}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           >
             <ul className="space-y-4 rounded-md bg-destructive/10 p-4">
-              {roadDisruptions.map((item) => (
+              {roadDisruptions.slice(0, 3).map((item) => (
                 <li key={item.id} className="flex items-start justify-between">
                   <span className="text-sm font-medium">{item.title}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{item.time}</span>
@@ -89,9 +122,26 @@ export default function Home() {
             title="Shop Notifications"
             icon={<Store className="h-6 w-6 text-primary" />}
             description="News about local businesses."
+            onSeeMore={() => handleSeeMore(
+              "All Shop Notifications",
+              "Here are all the recent notifications about local shops.",
+              <ul className="space-y-4">
+                {shopNotifications.map((item) => (
+                  <li key={item.id} className="flex flex-col rounded-md border p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{item.title}</span>
+                        <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
+                          {item.status}
+                        </Badge>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{item.location}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           >
              <ul className="space-y-4">
-              {shopNotifications.map((item) => (
+              {shopNotifications.slice(0, 3).map((item) => (
                 <li key={item.id} className="flex flex-col">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{item.title}</span>
@@ -114,9 +164,26 @@ export default function Home() {
             title="Park Status"
             icon={<Trees className="h-6 w-6 text-green-600" />}
             description="Condition and availability of local parks."
+            onSeeMore={() => handleSeeMore(
+              "All Park Statuses",
+              "Here are the latest statuses for all local parks.",
+              <ul className="space-y-4">
+                {parkStatus.map((item) => (
+                  <li key={item.id} className="rounded-md border p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{item.park}</span>
+                      <Badge variant={item.status === 'open' ? 'default' : 'secondary'} className={item.status === 'open' ? 'bg-green-600' : ''}>
+                        {item.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{item.message}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           >
             <ul className="space-y-4">
-              {parkStatus.map((item) => (
+              {parkStatus.slice(0, 3).map((item) => (
                 <li key={item.id}>
                    <div className="flex items-center justify-between">
                      <span className="text-sm font-medium">{item.park}</span>
@@ -139,6 +206,18 @@ export default function Home() {
             title="Local Events"
             icon={<CalendarDays className="h-6 w-6 text-primary" />}
             description="Upcoming community events and ceremonies."
+            onSeeMore={() => handleSeeMore(
+              "All Local Events",
+              "Here are all upcoming community events.",
+              <ul className="space-y-4">
+                {localEvents.map((event) => (
+                  <li key={event.id} className="rounded-md border p-4">
+                    <p className="font-semibold text-sm">{event.title}</p>
+                    <p className="text-xs text-muted-foreground">{event.date} @ {event.time}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           >
             <div className="flex flex-col gap-4">
               <Popover>
@@ -164,7 +243,7 @@ export default function Home() {
                 </PopoverContent>
               </Popover>
               <ul className="space-y-4">
-                {localEvents.map((event) => (
+                {localEvents.slice(0, 2).map((event) => (
                   <li key={event.id}>
                     <p className="font-semibold text-sm">{event.title}</p>
                     <p className="text-xs text-muted-foreground">{event.date} @ {event.time}</p>

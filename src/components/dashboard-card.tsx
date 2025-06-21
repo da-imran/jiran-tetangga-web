@@ -11,9 +11,10 @@ type DashboardCardProps = {
   children: ReactNode;
   className?: string;
   contentClassName?: string;
+  onSeeMore?: () => void;
 };
 
-export function DashboardCard({ title, description, icon, children, className, contentClassName }: DashboardCardProps) {
+export function DashboardCard({ title, description, icon, children, className, contentClassName, onSeeMore }: DashboardCardProps) {
   return (
     <Card className={cn("flex flex-col", className)}>
       <CardHeader>
@@ -30,12 +31,14 @@ export function DashboardCard({ title, description, icon, children, className, c
       <CardContent className={cn("flex-1", contentClassName)}>
         {children}
       </CardContent>
-      <CardFooter>
-        <Button variant="ghost" className="w-full">
-          See more
-          <ArrowRight />
-        </Button>
-      </CardFooter>
+      {onSeeMore && (
+        <CardFooter>
+          <Button variant="ghost" className="w-full" onClick={onSeeMore}>
+            See more
+            <ArrowRight />
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }
