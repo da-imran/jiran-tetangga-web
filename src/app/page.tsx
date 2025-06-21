@@ -1,11 +1,17 @@
 "use client";
 
-import { CalendarDays, Store, Trees, TrafficCone } from "lucide-react";
+import { useState } from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, CalendarDays, Store, Trees, TrafficCone } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 import { DashboardCard } from "@/components/dashboard-card";
 import { AppHeader } from "@/components/header";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
 
 const roadDisruptions = [
   { id: 1, title: "Jalan Cenderai Water Pipe Burst", time: "2 hours ago" },
@@ -28,7 +34,7 @@ const shopNotifications = [
 const parkStatus = [
   { id: 1, park: "Taman Permainan Utama", status: "open", message: "Playground swings repaired." },
   { id: 2, park: "Taman Rekreasi Sungai Tiram", status: "partial", message: "Jogging track closed for maintenance." },
-  { id: 3, title: "Laman Komuniti", status: "open", message: "All facilities are operational." },
+  { id: 3, park: "Laman Komuniti", status: "open", message: "All facilities are operational." },
 ];
 
 export default function Home() {
@@ -38,7 +44,7 @@ export default function Home() {
     <div className="flex min-h-screen w-full flex-col">
       <AppHeader />
       <main className="flex-1 p-4 md:p-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <DashboardCard
             title="Road Disruptions"
             icon={<TrafficCone className="h-6 w-6 text-destructive" />}
@@ -98,17 +104,30 @@ export default function Home() {
             title="Local Events"
             icon={<CalendarDays className="h-6 w-6 text-primary" />}
             description="Upcoming community events and ceremonies."
-            className="lg:col-span-2"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="rounded-md border self-start"
-                disabled={(date) => date < new Date("1900-01-01")}
-                initialFocus
-              />
+            <div className="flex flex-col gap-4">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
               <ul className="space-y-4">
                 {localEvents.map((event) => (
                   <li key={event.id}>
