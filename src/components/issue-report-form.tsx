@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,6 +41,7 @@ export function IssueReportForm() {
     defaultValues: {
       location: "",
       description: "",
+      category: "",
     },
   });
 
@@ -119,7 +121,7 @@ export function IssueReportForm() {
             <FormItem>
               <FormLabel>Upload Photo (Optional)</FormLabel>
               <FormControl>
-                <Input type="file" {...field} />
+                <Input type="file" {...form.register("photo")} />
               </FormControl>
               <FormMessage />
             </FormItem>
