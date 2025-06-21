@@ -8,9 +8,10 @@ type DashboardCardProps = {
   icon: ReactNode;
   children: ReactNode;
   className?: string;
+  contentClassName?: string;
 };
 
-export function DashboardCard({ title, description, icon, children, className }: DashboardCardProps) {
+export function DashboardCard({ title, description, icon, children, className, contentClassName }: DashboardCardProps) {
   return (
     <Card className={cn("flex flex-col", className)}>
       <CardHeader>
@@ -24,7 +25,7 @@ export function DashboardCard({ title, description, icon, children, className }:
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1">
+      <CardContent className={cn("flex-1", contentClassName)}>
         {children}
       </CardContent>
     </Card>

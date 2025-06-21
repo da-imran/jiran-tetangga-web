@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, CalendarDays, Store, Trees, TrafficCone } from "lucide-react";
+import { Calendar as CalendarIcon, CalendarDays, Eye, Store, Trees, TrafficCone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { DashboardCard } from "@/components/dashboard-card";
@@ -34,7 +34,7 @@ const shopNotifications = [
 const parkStatus = [
   { id: 1, park: "Taman Permainan Utama", status: "open", message: "Playground swings repaired." },
   { id: 2, park: "Taman Rekreasi Sungai Tiram", status: "partial", message: "Jogging track closed for maintenance." },
-  { id: 3, park: "Laman Komuniti", status: "open", message: "All facilities are operational." },
+  { id: 3, title: "Laman Komuniti", status: "open", message: "All facilities are operational." },
 ];
 
 export default function Home() {
@@ -49,6 +49,7 @@ export default function Home() {
             title="Road Disruptions"
             icon={<TrafficCone className="h-6 w-6 text-destructive" />}
             description="Latest updates on traffic and road closures."
+            contentClassName="bg-destructive/10"
           >
             <ul className="space-y-4">
               {roadDisruptions.map((item) => (
@@ -70,9 +71,14 @@ export default function Home() {
                 <li key={item.id} className="flex flex-col">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{item.title}</span>
-                    <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
-                      {item.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
+                        {item.status}
+                      </Badge>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                   <span className="text-xs text-muted-foreground">{item.location}</span>
                 </li>
@@ -90,9 +96,14 @@ export default function Home() {
                 <li key={item.id}>
                    <div className="flex items-center justify-between">
                      <span className="text-sm font-medium">{item.park}</span>
-                     <Badge variant={item.status === 'open' ? 'default' : 'secondary'} className={item.status === 'open' ? 'bg-green-600' : ''}>
-                        {item.status}
-                      </Badge>
+                     <div className="flex items-center gap-2">
+                      <Badge variant={item.status === 'open' ? 'default' : 'secondary'} className={item.status === 'open' ? 'bg-green-600' : ''}>
+                          {item.status}
+                        </Badge>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                     </div>
                    </div>
                    <p className="text-xs text-muted-foreground">{item.message}</p>
                 </li>
