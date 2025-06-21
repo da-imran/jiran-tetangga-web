@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Image from 'next/image';
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, CalendarDays, Eye, Store, Trees, TrafficCone } from "lucide-react";
-import { cn } from "@/lib/utils";
 
+import { cn } from "@/lib/utils";
 import { DashboardCard } from "@/components/dashboard-card";
 import { AppHeader } from "@/components/header";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const roadDisruptions = [
   { id: 1, title: "Jalan Cenderai Water Pipe Burst", time: "2 hours ago" },
@@ -26,24 +27,48 @@ const localEvents = [
 ];
 
 const shopNotifications = [
-  { id: 1, title: "New Bakery 'Roti Sedap' now open!", location: "Lot 23, Jalan Nuri", status: "new" },
-  { id: 2, title: "Kedai Runcit Ah Meng has closed", location: "No. 12, Jalan Merpati", status: "closed" },
-  { id: 3, title: "Grand Opening: Bubble Tea Shop", location: "Near 7-Eleven", status: "new" },
+  { id: 1, title: "New Bakery 'Roti Sedap' now open!", location: "Lot 23, Jalan Nuri", status: "new", image: "https://placehold.co/600x400.png", hint: "bakery bread" },
+  { id: 2, title: "Kedai Runcit Ah Meng has closed", location: "No. 12, Jalan Merpati", status: "closed", image: "https://placehold.co/600x400.png", hint: "convenience store" },
+  { id: 3, title: "Grand Opening: Bubble Tea Shop", location: "Near 7-Eleven", status: "new", image: "https://placehold.co/600x400.png", hint: "bubble tea" },
 ];
 
 const parkStatus = [
-  { id: 1, park: "Taman Permainan Utama", status: "open", message: "Playground swings repaired." },
-  { id: 2, park: "Taman Rekreasi Sungai Tiram", status: "partial", message: "Jogging track closed for maintenance." },
-  { id: 3, title: "Laman Komuniti", status: "open", message: "All facilities are operational." },
+  { id: 1, park: "Taman Permainan Utama", status: "open", message: "Playground swings repaired.", image: "https://placehold.co/600x400.png", hint: "playground park" },
+  { id: 2, park: "Taman Rekreasi Sungai Tiram", status: "partial", message: "Jogging track closed for maintenance.", image: "https://placehold.co/600x400.png", hint: "jogging track" },
+  { id: 3, park: "Laman Komuniti", status: "open", message: "All facilities are operational.", image: "https://placehold.co/600x400.png", hint: "community garden" },
 ];
 
 export default function Home() {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [selectedImageData, setSelectedImageData] = useState<{ src: string; alt: string; hint: string } | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleViewImage = (src: string, alt: string, hint: string) => {
+    setSelectedImageData({ src, alt, hint });
+    setDialogOpen(true);
+  };
   
   return (
     <div className="flex min-h-screen w-full flex-col">
       <AppHeader />
       <main className="flex-1 p-4 md:p-8">
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>{selectedImageData?.alt || 'Image Preview'}</DialogTitle>
+            </DialogHeader>
+            {selectedImageData && (
+              <Image
+                src={selectedImageData.src}
+                alt={selectedImageData.alt}
+                width={800}
+                height={600}
+                className="rounded-md object-cover"
+                data-ai-hint={selectedImageData.hint}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
         <div className="grid gap-6 md:grid-cols-2">
           <DashboardCard
             title="Road Disruptions"
@@ -74,7 +99,7 @@ export default function Home() {
                       <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
                         {item.status}
                       </Badge>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewImage(item.image, item.title, item.hint)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>
@@ -99,7 +124,7 @@ export default function Home() {
                       <Badge variant={item.status === 'open' ? 'default' : 'secondary'} className={item.status === 'open' ? 'bg-green-600' : ''}>
                           {item.status}
                         </Badge>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewImage(item.image, item.park, item.hint)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                      </div>
