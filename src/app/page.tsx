@@ -44,7 +44,7 @@ export default function Home() {
     <div className="flex min-h-screen w-full flex-col">
       <AppHeader />
       <main className="flex-1 p-4 md:p-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2">
           <DashboardCard
             title="Road Disruptions"
             icon={<TrafficCone className="h-6 w-6 text-destructive" />}
