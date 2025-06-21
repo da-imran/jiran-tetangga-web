@@ -49,9 +49,8 @@ export default function Home() {
             title="Road Disruptions"
             icon={<TrafficCone className="h-6 w-6 text-destructive" />}
             description="Latest updates on traffic and road closures."
-            contentClassName="bg-destructive/10"
           >
-            <ul className="space-y-4">
+            <ul className="space-y-4 rounded-md bg-destructive/10 p-4">
               {roadDisruptions.map((item) => (
                 <li key={item.id} className="flex items-start justify-between">
                   <span className="text-sm font-medium">{item.title}</span>
