@@ -96,12 +96,12 @@ export default function Home() {
         <Dialog open={isRegistrationOpen} onOpenChange={setIsRegistrationOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Register for an Event</DialogTitle>
+              <DialogTitle>Propose a New Event</DialogTitle>
               <DialogDescription>
-                Fill out the form below to register for a local event.
+                Fill out the form below to propose a new community event. Your proposal will be reviewed by an administrator.
               </DialogDescription>
             </DialogHeader>
-            <EventRegistrationForm events={localEvents} onFormSubmit={() => setIsRegistrationOpen(false)} />
+            <EventRegistrationForm onFormSubmit={() => setIsRegistrationOpen(false)} />
           </DialogContent>
         </Dialog>
 
