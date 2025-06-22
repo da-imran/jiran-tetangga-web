@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -10,10 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { Bell, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const roadDisruptions = [
   { id: 1, title: "Jalan Cenderai Water Pipe Burst", time: "2 hours ago" },
@@ -44,6 +47,11 @@ const localEvents = [
   { id: 1, title: "Community Gotong-Royong", date: "28 July 2024", time: "8:00 AM" },
   { id: 2, title: "Weekly Pasar Malam", date: "Every Friday", time: "5:00 PM - 10:00 PM" },
   { id: 3, title: "Sungai Tiram Fun Run", date: "15 August 2024", time: "7:00 AM" },
+];
+
+const eventProposals = [
+  { id: 1, eventName: "Charity Flea Market", eventDate: "25 August 2024", description: "A flea market to raise funds for the local animal shelter.", organizerName: "Jane Doe", organizerEmail: "jane.d@example.com" },
+  { id: 2, eventName: "Neighborhood Movie Night", eventDate: "5 September 2024", description: "Outdoor screening of a family-friendly movie at the community park.", organizerName: "John Smith", organizerEmail: "john.s@example.com" },
 ];
 
 const shopNotifications = [
@@ -61,6 +69,9 @@ const parkStatus = [
 
 export default function AdminDashboardPage() {
   const [action, setAction] = useState<{ type: 'add' | 'edit' | 'delete', itemType: string, data?: any } | null>(null);
+  const [isReviewingProposals, setIsReviewingProposals] = useState(false);
+  const [proposalToReject, setProposalToReject] = useState<any | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
   
   const handleAction = (type: 'add' | 'edit' | 'delete', itemType: string, data?: any) => {
     setAction({ type, itemType, data });
@@ -68,6 +79,18 @@ export default function AdminDashboardPage() {
   
   const closeDialogs = () => {
     setAction(null);
+  };
+  
+  const handleRejectSubmit = () => {
+    console.log(`Rejecting proposal ${proposalToReject.id} for reason: ${rejectionReason}`);
+    // Here you would typically call an API to reject the proposal
+    setProposalToReject(null);
+    setRejectionReason('');
+  };
+
+  const handleApprove = (proposalId: number) => {
+    console.log(`Approving proposal ${proposalId}`);
+    // Here you would typically call an API to approve the proposal
   };
 
   return (
@@ -221,14 +244,22 @@ export default function AdminDashboardPage() {
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div>
                 <CardTitle>Local Events</CardTitle>
-                <CardDescription>Manage community events.</CardDescription>
+                <CardDescription>Manage community events and review proposals.</CardDescription>
               </div>
-               <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Local Event')}>
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Add New
-                </span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" className="gap-1" onClick={() => setIsReviewingProposals(true)}>
+                  <Bell className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Review Proposals
+                  </span>
+                </Button>
+                <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Local Event')}>
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Add New
+                  </span>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -306,6 +337,66 @@ export default function AdminDashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog for reviewing event proposals */}
+      <Dialog open={isReviewingProposals} onOpenChange={setIsReviewingProposals}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Review Event Proposals</DialogTitle>
+            <DialogDescription>
+              Approve or reject the following event proposals.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-y-auto p-1">
+            <div className="space-y-4">
+              {eventProposals.map((proposal) => (
+                <Card key={proposal.id}>
+                  <CardHeader>
+                    <CardTitle>{proposal.eventName}</CardTitle>
+                    <CardDescription>Proposed by: {proposal.organizerName} ({proposal.organizerEmail})</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <p><span className="font-semibold">Proposed Date:</span> {proposal.eventDate}</p>
+                    <p className="text-muted-foreground">{proposal.description}</p>
+                  </CardContent>
+                  <CardFooter className="flex justify-end gap-2">
+                    <Button className="bg-green-600 text-white hover:bg-green-700" onClick={() => handleApprove(proposal.id)}>Approve</Button>
+                    <Button variant="destructive" onClick={() => setProposalToReject(proposal)}>Reject</Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog for rejection reason */}
+      <Dialog open={!!proposalToReject} onOpenChange={() => setProposalToReject(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reason for Rejection</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting the event proposal "{proposalToReject?.eventName}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Label htmlFor="rejection-reason" className="sr-only">
+              Reason for Rejection
+            </Label>
+            <Textarea
+              id="rejection-reason"
+              placeholder="e.g., Event conflicts with another scheduled activity."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProposalToReject(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleRejectSubmit}>Confirm Rejection</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
