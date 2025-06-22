@@ -24,9 +24,9 @@ const roadDisruptions = [
 ];
 
 const localEvents = [
-  { id: 1, title: "Community Gotong-Royong", date: "28 July 2024", time: "8:00 AM" },
-  { id: 2, title: "Weekly Pasar Malam", date: "Every Friday", time: "5:00 PM - 10:00 PM" },
-  { id: 3, title: "Sungai Tiram Fun Run", date: "15 August 2024", time: "7:00 AM" },
+  { id: 1, title: "Community Gotong-Royong", date: "28 July 2024", time: "8:00 AM", description: "Join us for a community clean-up event. Let's make our neighborhood cleaner and greener together. Gloves and trash bags will be provided." },
+  { id: 2, title: "Weekly Pasar Malam", date: "Every Friday", time: "5:00 PM - 10:00 PM", description: "The weekly night market is back! Enjoy a variety of local street food, fresh produce, and unique goods. A great place for the whole family." },
+  { id: 3, title: "Sungai Tiram Fun Run", date: "15 August 2024", time: "7:00 AM", description: "Get your running shoes ready for a 5km fun run around Sungai Tiram. T-shirts and medals for all participants. Register now!" },
 ];
 
 const shopNotifications = [
@@ -223,12 +223,25 @@ export default function Home() {
             description="Upcoming community events and ceremonies."
             onSeeMore={() => handleSeeMore(
               "All Local Events",
-              "Here are all upcoming community events.",
+              "Here are all upcoming community events. Click the view icon for more details.",
               <ul className="space-y-4">
                 {localEvents.map((event) => (
-                  <li key={event.id} className="rounded-md border p-4">
-                    <p className="font-semibold text-sm">{event.title}</p>
-                    <p className="text-xs text-muted-foreground">{event.date} @ {event.time}</p>
+                   <li key={event.id} className="flex items-center justify-between rounded-md border p-4">
+                    <div>
+                      <p className="font-semibold text-sm">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">{event.date} @ {event.time}</p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleSeeMore(
+                      event.title,
+                      `Event Details`,
+                      <div className="space-y-2">
+                        <p className="text-sm"><span className="font-semibold">Date:</span> {event.date}</p>
+                        <p className="text-sm"><span className="font-semibold">Time:</span> {event.time}</p>
+                        <p className="text-sm text-muted-foreground">{event.description}</p>
+                      </div>
+                    )}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </li>
                 ))}
               </ul>
@@ -265,9 +278,22 @@ export default function Home() {
               </Popover>
               <ul className="space-y-4">
                 {localEvents.slice(0, 2).map((event) => (
-                  <li key={event.id}>
-                    <p className="font-semibold text-sm">{event.title}</p>
-                    <p className="text-xs text-muted-foreground">{event.date} @ {event.time}</p>
+                  <li key={event.id} className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-sm">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">{event.date} @ {event.time}</p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleSeeMore(
+                      event.title,
+                      `Event Details`,
+                      <div className="space-y-2">
+                        <p className="text-sm"><span className="font-semibold">Date:</span> {event.date}</p>
+                        <p className="text-sm"><span className="font-semibold">Time:</span> {event.time}</p>
+                        <p className="text-sm text-muted-foreground">{event.description}</p>
+                      </div>
+                    )}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </li>
                 ))}
               </ul>
