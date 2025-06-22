@@ -39,24 +39,6 @@ export function AppHeader() {
           <span className="text-lg font-headline">JiranTetangga</span>
         </Link>
         <div className="flex items-center gap-4">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Wrench className="mr-2 h-4 w-4" />
-                Report an Issue
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Submit an Issue Report</DialogTitle>
-                <DialogDescription>
-                  Let us know about any problems in the neighborhood. Your report will be sent to the administrators.
-                </DialogDescription>
-              </DialogHeader>
-              <IssueReportForm />
-            </DialogContent>
-          </Dialog>
-
           {isAdminPage ? (
             <>
               <Button variant="ghost" asChild>
@@ -88,12 +70,31 @@ export function AppHeader() {
               <Badge variant="outline" className="hidden font-semibold md:block">Admin</Badge>
             </>
           ) : (
-            <Button asChild>
-              <Link href="/admin">
-                <LogIn className="mr-2 h-4 w-4" />
-                Admin Login
-              </Link>
-            </Button>
+            <>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Wrench className="mr-2 h-4 w-4" />
+                    Report an Issue
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Submit an Issue Report</DialogTitle>
+                    <DialogDescription>
+                      Let us know about any problems in the neighborhood. Your report will be sent to the administrators.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <IssueReportForm />
+                </DialogContent>
+              </Dialog>
+              <Button asChild>
+                <Link href="/admin">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Admin Login
+                </Link>
+              </Button>
+            </>
           )}
         </div>
       </div>
