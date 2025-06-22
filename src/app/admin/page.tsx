@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { AppHeader } from "@/components/header";
 import {
   Table,
@@ -11,6 +14,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil, PlusCircle, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const roadDisruptions = [
   { id: 1, title: "Jalan Cenderai Water Pipe Burst", time: "2 hours ago" },
@@ -39,6 +60,16 @@ const parkStatus = [
 
 
 export default function AdminDashboardPage() {
+  const [action, setAction] = useState<{ type: 'add' | 'edit' | 'delete', itemType: string, data?: any } | null>(null);
+  
+  const handleAction = (type: 'add' | 'edit' | 'delete', itemType: string, data?: any) => {
+    setAction({ type, itemType, data });
+  };
+  
+  const closeDialogs = () => {
+    setAction(null);
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <AppHeader />
@@ -52,7 +83,7 @@ export default function AdminDashboardPage() {
                   Manage all road disruption reports.
                 </CardDescription>
               </div>
-              <Button size="sm" className="gap-1">
+              <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Road Disruption')}>
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                   Add New
@@ -74,8 +105,12 @@ export default function AdminDashboardPage() {
                       <TableCell className="font-medium">{item.title}</TableCell>
                       <TableCell>{item.time}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Road Disruption', item)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAction('delete', 'Road Disruption', item)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -92,7 +127,7 @@ export default function AdminDashboardPage() {
                   Manage local business notifications.
                 </CardDescription>
               </div>
-              <Button size="sm" className="gap-1">
+              <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Shop Notification')}>
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                   Add New
@@ -120,8 +155,12 @@ export default function AdminDashboardPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Shop Notification', item)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAction('delete', 'Shop Notification', item)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -136,7 +175,7 @@ export default function AdminDashboardPage() {
                 <CardTitle>Park Status</CardTitle>
                 <CardDescription>Manage local park statuses.</CardDescription>
               </div>
-              <Button size="sm" className="gap-1">
+              <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Park Status')}>
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                   Add New
@@ -164,8 +203,12 @@ export default function AdminDashboardPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Park Status', item)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAction('delete', 'Park Status', item)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -180,7 +223,7 @@ export default function AdminDashboardPage() {
                 <CardTitle>Local Events</CardTitle>
                 <CardDescription>Manage community events.</CardDescription>
               </div>
-               <Button size="sm" className="gap-1">
+               <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Local Event')}>
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                   Add New
@@ -204,8 +247,12 @@ export default function AdminDashboardPage() {
                       <TableCell>{item.date}</TableCell>
                       <TableCell>{item.time}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Local Event', item)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAction('delete', 'Local Event', item)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -215,6 +262,50 @@ export default function AdminDashboardPage() {
           </Card>
         </div>
       </main>
+      
+      {/* Dialog for Add/Edit */}
+      <Dialog open={action?.type === 'add' || action?.type === 'edit'} onOpenChange={closeDialogs}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>
+              {action?.type === 'add' ? 'Add New' : 'Edit'} {action?.itemType}
+            </DialogTitle>
+            <DialogDescription>
+              Make changes here. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Form fields for the {action?.itemType?.toLowerCase()} will go here.</p>
+            {action?.type === 'edit' && (
+              <pre className="mt-4 rounded-md bg-muted p-4 text-xs">
+                {JSON.stringify(action.data, null, 2)}
+              </pre>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialogs}>Cancel</Button>
+            <Button onClick={closeDialogs}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* AlertDialog for Delete */}
+      <AlertDialog open={action?.type === 'delete'} onOpenChange={closeDialogs}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this {action?.itemType?.toLowerCase()}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={closeDialogs}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={closeDialogs} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
