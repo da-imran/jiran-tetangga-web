@@ -30,7 +30,7 @@ export default function ProfilePage() {
             <AvatarFallback>JT</AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle className="text-3xl font-headline">{user.fullName}</CardTitle>
+            <CardTitle className="text-3xl font-headline">Profile</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="grid gap-4 text-sm">
