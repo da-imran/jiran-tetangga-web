@@ -1,3 +1,4 @@
+
 import type { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -12,20 +13,24 @@ type DashboardCardProps = {
   className?: string;
   contentClassName?: string;
   onSeeMore?: () => void;
+  headerActions?: ReactNode;
 };
 
-export function DashboardCard({ title, description, icon, children, className, contentClassName, onSeeMore }: DashboardCardProps) {
+export function DashboardCard({ title, description, icon, children, className, contentClassName, onSeeMore, headerActions }: DashboardCardProps) {
   return (
     <Card className={cn("flex flex-col", className)}>
       <CardHeader>
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            {icon}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              {icon}
+            </div>
+            <div>
+              <CardTitle>{title}</CardTitle>
+              <CardDescription>{description}</CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </div>
+          {headerActions && <div>{headerActions}</div>}
         </div>
       </CardHeader>
       <CardContent className={cn("flex-1", contentClassName)}>

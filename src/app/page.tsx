@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useState } from "react";
 import Image from 'next/image';
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, CalendarDays, Eye, Store, Trees, TrafficCone } from "lucide-react";
+import { Calendar as CalendarIcon, CalendarDays, Eye, PenSquare, Store, Trees, TrafficCone } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { DashboardCard } from "@/components/dashboard-card";
@@ -13,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { EventRegistrationForm } from "@/components/event-registration-form";
 
 const roadDisruptions = [
   { id: 1, title: "Jalan Cenderai Water Pipe Burst", time: "2 hours ago" },
@@ -45,6 +47,7 @@ export default function Home() {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsContent, setDetailsContent] = useState<{ title: string; description: string; content: React.ReactNode } | null>(null);
+  const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
 
   const handleViewImage = (src: string, alt: string, hint: string) => {
     setSelectedImageData({ src, alt, hint });
@@ -87,6 +90,18 @@ export default function Home() {
             <div className="max-h-[60vh] overflow-y-auto pr-2">
               {detailsContent?.content}
             </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isRegistrationOpen} onOpenChange={setIsRegistrationOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Register for an Event</DialogTitle>
+              <DialogDescription>
+                Fill out the form below to register for a local event.
+              </DialogDescription>
+            </DialogHeader>
+            <EventRegistrationForm events={localEvents} onFormSubmit={() => setIsRegistrationOpen(false)} />
           </DialogContent>
         </Dialog>
 
@@ -218,6 +233,12 @@ export default function Home() {
                 ))}
               </ul>
             )}
+            headerActions={
+              <Button onClick={() => setIsRegistrationOpen(true)}>
+                <PenSquare className="mr-2 h-4 w-4" />
+                Apply
+              </Button>
+            }
           >
             <div className="flex flex-col gap-4">
               <Popover>
