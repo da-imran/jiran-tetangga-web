@@ -27,7 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
-  category: z.string({ required_error: "Please select a category." }),
+  category: z.string().min(1, { message: "Please select a category." }),
   location: z.string().min(5, "Location details are required.").max(100),
   description: z.string().min(10, "Description is required.").max(250),
   photo: z.any().optional(),
