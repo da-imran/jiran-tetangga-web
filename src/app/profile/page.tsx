@@ -7,7 +7,7 @@ import { Home } from "lucide-react";
 
 export default function ProfilePage() {
   const user = {
-    fullName: "Jiran Tetangga",
+    fullName: "Muhammad Ehsan Imran",
     address: "123 Taman Komuniti, 81750 Masai, Johor",
     dateJoined: "July 1, 2024",
     avatar: "https://placehold.co/100x100.png",
