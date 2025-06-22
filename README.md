@@ -33,7 +33,7 @@ A full-stack project designed to help residents of a dense neighbourhood in **Su
 
 ---
 
-## 📂 Backend Project Structure
+## 📂 Frontend Project Structure
 ```bash
 jiran-tetangga-system/
 ├── LICENSE
