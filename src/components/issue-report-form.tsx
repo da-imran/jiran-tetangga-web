@@ -28,8 +28,8 @@ import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   category: z.string({ required_error: "Please select a category." }),
-  location: z.string().min(5, "Location details must be at least 5 characters.").max(100),
-  description: z.string().min(10, "Description must be at least 10 characters.").max(500),
+  location: z.string().min(5, "Location details are required.").max(100),
+  description: z.string().min(10, "Description is required.").max(250),
   photo: z.any().optional(),
 });
 
