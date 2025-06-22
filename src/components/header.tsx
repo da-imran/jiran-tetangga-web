@@ -1,5 +1,7 @@
+"use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Home, LogIn, User, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,9 +22,13 @@ import {
 } from "@/components/ui/dialog";
 import { IssueReportForm } from "./issue-report-form";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Badge } from "./ui/badge";
 
 
 export function AppHeader() {
+  const pathname = usePathname();
+  const isAdminPage = pathname.startsWith('/admin');
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
@@ -48,6 +54,10 @@ export function AppHeader() {
               <IssueReportForm />
             </DialogContent>
           </Dialog>
+          
+          {isAdminPage && (
+            <Badge variant="outline" className="hidden font-semibold md:block">Admin</Badge>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -71,7 +81,7 @@ export function AppHeader() {
               <Link href="/admin">
                 <DropdownMenuItem>
                   <LogIn className="mr-2 h-4 w-4" />
-                  <span>Admin Login</span>
+                  <span>{isAdminPage ? 'Dashboard' : 'Admin Login'}</span>
                 </DropdownMenuItem>
               </Link>
             </DropdownMenuContent>
