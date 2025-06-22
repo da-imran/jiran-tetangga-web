@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -54,10 +55,6 @@ export function AppHeader() {
               <IssueReportForm />
             </DialogContent>
           </Dialog>
-          
-          {isAdminPage && (
-            <Badge variant="outline" className="hidden font-semibold md:block">Admin</Badge>
-          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -86,6 +83,10 @@ export function AppHeader() {
               </Link>
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          {isAdminPage && (
+            <Badge variant="outline" className="hidden font-semibold md:block">Admin</Badge>
+          )}
         </div>
       </div>
     </header>
