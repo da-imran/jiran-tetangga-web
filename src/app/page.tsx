@@ -55,7 +55,7 @@ export default function Home() {
     const fetchRoadDisruptions = async () => {
       try {
         const response = await axios.get('http/jirantetangga/v1/news');
-        if (response) {
+        if (response && response.data) {
           setRoadDisruptions(response.data);
         } else {
           console.log('No data found!');
