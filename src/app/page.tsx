@@ -142,7 +142,7 @@ export default function Home() {
                     </li>
                   ))
                 ) : (
-                  <p>No records found.</p>
+                  <p>No available data.</p>
                 )}
               </ul>
             )}
@@ -156,7 +156,7 @@ export default function Home() {
                   </li>
                 ))
               ) : (
-                <p>No records found.</p>
+                <p>No available data.</p>
               )}
             </ul>
           </DashboardCard>
