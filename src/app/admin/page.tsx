@@ -101,8 +101,8 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div>
-                <CardTitle>Road Disruptions</CardTitle>
-                <CardDescription>
+                <CardTitle data-speakable="true">Road Disruptions</CardTitle>
+                <CardDescription data-speakable="true">
                   Manage all road disruption reports.
                 </CardDescription>
               </div>
@@ -117,16 +117,16 @@ export default function AdminDashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Reported</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead data-speakable="true">Title</TableHead>
+                    <TableHead data-speakable="true">Reported</TableHead>
+                    <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {roadDisruptions.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.title}</TableCell>
-                      <TableCell>{item.time}</TableCell>
+                      <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
+                      <TableCell data-speakable="true">{item.time}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Road Disruption', item)}>
                           <Pencil className="h-4 w-4" />
@@ -145,8 +145,8 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div>
-                <CardTitle>Shop Notifications</CardTitle>
-                <CardDescription>
+                <CardTitle data-speakable="true">Shop Notifications</CardTitle>
+                <CardDescription data-speakable="true">
                   Manage local business notifications.
                 </CardDescription>
               </div>
@@ -161,19 +161,19 @@ export default function AdminDashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead data-speakable="true">Title</TableHead>
+                    <TableHead data-speakable="true">Location</TableHead>
+                    <TableHead data-speakable="true">Status</TableHead>
+                    <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {shopNotifications.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.title}</TableCell>
-                      <TableCell>{item.location}</TableCell>
+                      <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
+                      <TableCell data-speakable="true">{item.location}</TableCell>
                       <TableCell>
-                        <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
+                        <Badge data-speakable="true" variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
                           {item.status}
                         </Badge>
                       </TableCell>
@@ -195,8 +195,8 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div>
-                <CardTitle>Park Status</CardTitle>
-                <CardDescription>Manage local park statuses.</CardDescription>
+                <CardTitle data-speakable="true">Park Status</CardTitle>
+                <CardDescription data-speakable="true">Manage local park statuses.</CardDescription>
               </div>
               <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Park Status')}>
                 <PlusCircle className="h-3.5 w-3.5" />
@@ -209,19 +209,19 @@ export default function AdminDashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Park</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead data-speakable="true">Park</TableHead>
+                    <TableHead data-speakable="true">Message</TableHead>
+                    <TableHead data-speakable="true">Status</TableHead>
+                    <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {parkStatus.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.park}</TableCell>
-                      <TableCell>{item.message}</TableCell>
+                      <TableCell className="font-medium" data-speakable="true">{item.park}</TableCell>
+                      <TableCell data-speakable="true">{item.message}</TableCell>
                       <TableCell>
-                        <Badge variant={item.status === 'open' ? 'default' : 'secondary'} className={item.status === 'open' ? 'bg-green-600' : ''}>
+                        <Badge data-speakable="true" variant={item.status === 'open' ? 'default' : 'secondary'} className={item.status === 'open' ? 'bg-green-600' : ''}>
                           {item.status}
                         </Badge>
                       </TableCell>
@@ -243,8 +243,8 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div>
-                <CardTitle>Local Events</CardTitle>
-                <CardDescription>Manage community events and review proposals.</CardDescription>
+                <CardTitle data-speakable="true">Local Events</CardTitle>
+                <CardDescription data-speakable="true">Manage community events and review proposals.</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Button size="sm" className="gap-1" onClick={() => setIsReviewingProposals(true)}>
@@ -265,18 +265,18 @@ export default function AdminDashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Event</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead data-speakable="true">Event</TableHead>
+                    <TableHead data-speakable="true">Date</TableHead>
+                    <TableHead data-speakable="true">Time</TableHead>
+                    <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {localEvents.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.title}</TableCell>
-                      <TableCell>{item.date}</TableCell>
-                      <TableCell>{item.time}</TableCell>
+                      <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
+                      <TableCell data-speakable="true">{item.date}</TableCell>
+                      <TableCell data-speakable="true">{item.time}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Local Event', item)}>
                           <Pencil className="h-4 w-4" />
@@ -298,15 +298,15 @@ export default function AdminDashboardPage() {
       <Dialog open={action?.type === 'add' || action?.type === 'edit'} onOpenChange={closeDialogs}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle data-speakable="true">
               {action?.type === 'add' ? 'Add New' : 'Edit'} {action?.itemType}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription data-speakable="true">
               Make changes here. Click save when you're done.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <p>Form fields for the {action?.itemType?.toLowerCase()} will go here.</p>
+            <p data-speakable="true">Form fields for the {action?.itemType?.toLowerCase()} will go here.</p>
             {action?.type === 'edit' && (
               <pre className="mt-4 rounded-md bg-muted p-4 text-xs">
                 {JSON.stringify(action.data, null, 2)}
@@ -324,8 +324,8 @@ export default function AdminDashboardPage() {
       <AlertDialog open={action?.type === 'delete'} onOpenChange={closeDialogs}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle data-speakable="true">Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription data-speakable="true">
               This action cannot be undone. This will permanently delete this {action?.itemType?.toLowerCase()}.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -342,8 +342,8 @@ export default function AdminDashboardPage() {
       <Dialog open={isReviewingProposals} onOpenChange={setIsReviewingProposals}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Review Event Proposals</DialogTitle>
-            <DialogDescription>
+            <DialogTitle data-speakable="true">Review Event Proposals</DialogTitle>
+            <DialogDescription data-speakable="true">
               Approve or reject the following event proposals.
             </DialogDescription>
           </DialogHeader>
@@ -352,12 +352,12 @@ export default function AdminDashboardPage() {
               {eventProposals.map((proposal) => (
                 <Card key={proposal.id}>
                   <CardHeader>
-                    <CardTitle>{proposal.eventName}</CardTitle>
-                    <CardDescription>Proposed by: {proposal.organizerName} ({proposal.organizerEmail})</CardDescription>
+                    <CardTitle data-speakable="true">{proposal.eventName}</CardTitle>
+                    <CardDescription data-speakable="true">Proposed by: {proposal.organizerName} ({proposal.organizerEmail})</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
-                    <p><span className="font-semibold">Proposed Date:</span> {proposal.eventDate}</p>
-                    <p className="text-muted-foreground">{proposal.description}</p>
+                    <p data-speakable="true"><span className="font-semibold">Proposed Date:</span> {proposal.eventDate}</p>
+                    <p className="text-muted-foreground" data-speakable="true">{proposal.description}</p>
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2">
                     <Button className="bg-green-600 text-white hover:bg-green-700" onClick={() => handleApprove(proposal.id)}>Approve</Button>
@@ -374,13 +374,13 @@ export default function AdminDashboardPage() {
       <Dialog open={!!proposalToReject} onOpenChange={() => setProposalToReject(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Reason for Rejection</DialogTitle>
-            <DialogDescription>
+            <DialogTitle data-speakable="true">Reason for Rejection</DialogTitle>
+            <DialogDescription data-speakable="true">
               Please provide a reason for rejecting the event proposal "{proposalToReject?.eventName}".
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <Label htmlFor="rejection-reason" className="sr-only">
+            <Label htmlFor="rejection-reason" className="sr-only" data-speakable="true">
               Reason for Rejection
             </Label>
             <Textarea
