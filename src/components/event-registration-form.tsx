@@ -70,7 +70,7 @@ export function EventRegistrationForm({ onFormSubmit }: EventRegistrationFormPro
           control={form.control}
           name="eventName"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-speakable="true">
               <FormLabel>Event Name</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Community Cleanup Day" {...field} />
@@ -83,7 +83,7 @@ export function EventRegistrationForm({ onFormSubmit }: EventRegistrationFormPro
           control={form.control}
           name="eventDate"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
+            <FormItem className="flex flex-col" data-speakable="true">
               <FormLabel>Event Date</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
@@ -124,7 +124,7 @@ export function EventRegistrationForm({ onFormSubmit }: EventRegistrationFormPro
           control={form.control}
           name="description"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-speakable="true">
               <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea
@@ -144,7 +144,7 @@ export function EventRegistrationForm({ onFormSubmit }: EventRegistrationFormPro
           control={form.control}
           name="organizerName"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-speakable="true">
               <FormLabel>Your Name</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., John Doe" {...field} />
@@ -157,7 +157,7 @@ export function EventRegistrationForm({ onFormSubmit }: EventRegistrationFormPro
           control={form.control}
           name="organizerEmail"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-speakable="true">
               <FormLabel>Your Email Address</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="e.g., johndoe@example.com" {...field} />

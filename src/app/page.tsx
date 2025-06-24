@@ -116,8 +116,8 @@ export default function Home() {
         <Dialog open={isRegistrationOpen} onOpenChange={setIsRegistrationOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Propose a New Event</DialogTitle>
-              <DialogDescription>
+              <DialogTitle data-speakable="true">Propose a New Event</DialogTitle>
+              <DialogDescription data-speakable="true">
                 Fill out the form below to propose a new community event. Your proposal will be reviewed by an administrator.
               </DialogDescription>
             </DialogHeader>

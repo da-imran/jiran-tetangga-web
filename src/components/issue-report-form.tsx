@@ -61,7 +61,7 @@ export function IssueReportForm() {
           control={form.control}
           name="category"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-speakable="true">
               <FormLabel>Category</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
@@ -85,7 +85,7 @@ export function IssueReportForm() {
           control={form.control}
           name="location"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-speakable="true">
               <FormLabel>Location</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Jalan Merbuk, near the playground" {...field} />
@@ -101,7 +101,7 @@ export function IssueReportForm() {
           control={form.control}
           name="description"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-speakable="true">
               <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea
@@ -118,7 +118,7 @@ export function IssueReportForm() {
           control={form.control}
           name="photo"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-speakable="true">
               <FormLabel>Upload Photo (Optional)</FormLabel>
               <FormControl>
                 <Input type="file" {...form.register("photo")} />

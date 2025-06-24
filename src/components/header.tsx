@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -80,8 +81,8 @@ export function AppHeader() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
-                    <DialogTitle>Submit an Issue Report</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle data-speakable="true">Submit an Issue Report</DialogTitle>
+                    <DialogDescription data-speakable="true">
                       Let us know about any problems in the neighborhood. Your report will be sent to the administrators.
                     </DialogDescription>
                   </DialogHeader>
