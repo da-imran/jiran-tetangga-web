@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Accessibility, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Accessibility, ZoomIn, ZoomOut, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -19,10 +19,17 @@ const INITIAL_FONT_SIZE = 16; // Corresponds to Tailwind's `text-base`
 export function AccessibilityMenu() {
   const [isHighContrast, setIsHighContrast] = useState(false);
   const [fontSize, setFontSize] = useState(INITIAL_FONT_SIZE);
+  const [isTtsEnabled, setIsTtsEnabled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
+    // Ensure speech is cancelled when the component unmounts
+    return () => {
+      if ("speechSynthesis" in window && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -47,6 +54,25 @@ export function AccessibilityMenu() {
     setIsHighContrast(checked);
     document.documentElement.classList.toggle("high-contrast", checked);
     localStorage.setItem("high-contrast-mode", JSON.stringify(checked));
+  };
+  
+  const toggleTts = (checked: boolean) => {
+    setIsTtsEnabled(checked);
+
+    if (!("speechSynthesis" in window)) {
+      console.warn("Text-to-Speech is not supported in this browser.");
+      return;
+    }
+
+    if (checked) {
+      const mainContent = document.querySelector("main")?.innerText;
+      if (mainContent) {
+        const utterance = new SpeechSynthesisUtterance(mainContent);
+        window.speechSynthesis.speak(utterance);
+      }
+    } else {
+      window.speechSynthesis.cancel();
+    }
   };
 
   const changeFontSize = (direction: "increase" | "decrease") => {
@@ -73,6 +99,12 @@ export function AccessibilityMenu() {
     setFontSize(INITIAL_FONT_SIZE);
     document.documentElement.style.fontSize = ""; // Use '' to revert to stylesheet default
     localStorage.removeItem("font-size");
+    
+    // Reset TTS
+    if ("speechSynthesis" in window && window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+    setIsTtsEnabled(false);
   };
 
   if (!isMounted) {
@@ -106,6 +138,18 @@ export function AccessibilityMenu() {
               id="high-contrast-mode"
               checked={isHighContrast}
               onCheckedChange={toggleHighContrast}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="tts-mode" className="flex items-center gap-2">
+              {isTtsEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              <span>Read Page Aloud</span>
+            </Label>
+            <Switch
+              id="tts-mode"
+              checked={isTtsEnabled}
+              onCheckedChange={toggleTts}
+              aria-label="Toggle text to speech"
             />
           </div>
           <div className="flex items-center justify-between">
