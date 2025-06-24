@@ -26,8 +26,8 @@ export function DashboardCard({ title, description, icon, children, className, c
               {icon}
             </div>
             <div>
-              <CardTitle>{title}</CardTitle>
-              <CardDescription>{description}</CardDescription>
+              <CardTitle data-speakable="true">{title}</CardTitle>
+              <CardDescription data-speakable="true">{description}</CardDescription>
             </div>
           </div>
           {headerActions && <div>{headerActions}</div>}

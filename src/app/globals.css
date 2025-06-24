@@ -88,3 +88,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .tts-enabled [data-speakable="true"] {
+    @apply cursor-pointer rounded-sm ring-offset-background transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+}

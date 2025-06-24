@@ -104,8 +104,8 @@ export default function Home() {
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
           <DialogContent className="max-w-xl">
             <DialogHeader>
-              <DialogTitle>{detailsContent?.title}</DialogTitle>
-              <DialogDescription>{detailsContent?.description}</DialogDescription>
+              <DialogTitle data-speakable="true">{detailsContent?.title}</DialogTitle>
+              <DialogDescription data-speakable="true">{detailsContent?.description}</DialogDescription>
             </DialogHeader>
             <div className="max-h-[60vh] overflow-y-auto pr-2">
               {detailsContent?.content}
@@ -136,13 +136,13 @@ export default function Home() {
               <ul className="space-y-4">
                 {roadDisruptions.length > 0 ? (
                   roadDisruptions.map((disruption: any) => (
-                    <li key={disruption.id} className="flex items-start justify-between rounded-md border p-4">
+                    <li key={disruption.id} className="flex items-start justify-between rounded-md border p-4" data-speakable="true">
                       <span className="text-sm font-medium">{disruption.title}</span>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">{disruption.time}</span>
                     </li>
                   ))
                 ) : (
-                  <p>No available data.</p>
+                  <p data-speakable="true">No available data.</p>
                 )}
               </ul>
             )}
@@ -150,13 +150,13 @@ export default function Home() {
             <ul className="space-y-4 rounded-md bg-destructive/10 p-4">
               {roadDisruptions.length > 0 ? (
                 roadDisruptions.slice(0, 3).map((disruption: any) => (
-                  <li key={disruption.id} className="flex items-start justify-between">
+                  <li key={disruption.id} className="flex items-start justify-between" data-speakable="true">
                     <span className="text-sm font-medium">{disruption.title}</span>
                     <span className="text-xs text-muted-foreground whitespace-nowrap">{disruption.time}</span>
                   </li>
                 ))
               ) : (
-                <p>No available data.</p>
+                <p data-speakable="true">No available data.</p>
               )}
             </ul>
           </DashboardCard>
@@ -170,7 +170,7 @@ export default function Home() {
               "Here are all the recent notifications about local shops.",
               <ul className="space-y-4">
                 {shopNotifications.map((item) => (
-                  <li key={item.id} className="flex flex-col rounded-md border p-4">
+                  <li key={item.id} className="flex flex-col rounded-md border p-4" data-speakable="true">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">{item.title}</span>
                         <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
@@ -185,7 +185,7 @@ export default function Home() {
           >
              <ul className="space-y-4">
               {shopNotifications.slice(0, 3).map((item) => (
-                <li key={item.id} className="flex flex-col">
+                <li key={item.id} className="flex flex-col" data-speakable="true">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{item.title}</span>
                     <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ export default function Home() {
               "Here are the latest statuses for all local parks.",
               <ul className="space-y-4">
                 {parkStatus.map((item) => (
-                  <li key={item.id} className="rounded-md border p-4">
+                  <li key={item.id} className="rounded-md border p-4" data-speakable="true">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">{item.park}</span>
                       <Badge variant={item.status === 'open' ? 'default' : 'secondary'} className={item.status === 'open' ? 'bg-green-600' : ''}>
@@ -227,7 +227,7 @@ export default function Home() {
           >
             <ul className="space-y-4">
               {parkStatus.slice(0, 3).map((item) => (
-                <li key={item.id}>
+                <li key={item.id} data-speakable="true">
                    <div className="flex items-center justify-between">
                      <span className="text-sm font-medium">{item.park}</span>
                      <div className="flex items-center gap-2">
@@ -254,7 +254,7 @@ export default function Home() {
               "Here are all upcoming community events. Click the view icon for more details.",
               <ul className="space-y-4">
                 {localEvents.map((event) => (
-                   <li key={event.id} className="flex items-center justify-between rounded-md border p-4">
+                   <li key={event.id} className="flex items-center justify-between rounded-md border p-4" data-speakable="true">
                     <div>
                       <p className="font-semibold text-sm">{event.title}</p>
                       <p className="text-xs text-muted-foreground">{event.date} @ {event.time}</p>
@@ -262,7 +262,7 @@ export default function Home() {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleSeeMore(
                       event.title,
                       `Event Details`,
-                      <div className="space-y-2">
+                      <div className="space-y-2" data-speakable="true">
                         <p className="text-sm"><span className="font-semibold">Date:</span> {event.date}</p>
                         <p className="text-sm"><span className="font-semibold">Time:</span> {event.time}</p>
                         <p className="text-sm text-muted-foreground">{event.description}</p>
@@ -306,7 +306,7 @@ export default function Home() {
               </Popover>
               <ul className="space-y-4">
                 {localEvents.slice(0, 2).map((event) => (
-                  <li key={event.id} className="flex items-center justify-between">
+                  <li key={event.id} className="flex items-center justify-between" data-speakable="true">
                     <div>
                       <p className="font-semibold text-sm">{event.title}</p>
                       <p className="text-xs text-muted-foreground">{event.date} @ {event.time}</p>
@@ -314,7 +314,7 @@ export default function Home() {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleSeeMore(
                       event.title,
                       `Event Details`,
-                      <div className="space-y-2">
+                      <div className="space-y-2" data-speakable="true">
                         <p className="text-sm"><span className="font-semibold">Date:</span> {event.date}</p>
                         <p className="text-sm"><span className="font-semibold">Time:</span> {event.time}</p>
                         <p className="text-sm text-muted-foreground">{event.description}</p>

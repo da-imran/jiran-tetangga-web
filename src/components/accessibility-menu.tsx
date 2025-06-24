@@ -22,13 +22,30 @@ export function AccessibilityMenu() {
   const [isTtsEnabled, setIsTtsEnabled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
+  // Click handler for text-to-speech
+  const handleTextClick = (event: MouseEvent) => {
+    const target = event.target as HTMLElement;
+    const speakableElement = target.closest('[data-speakable="true"]');
+    
+    if (speakableElement) {
+      const text = (speakableElement as HTMLElement).innerText;
+      if (text && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel(); // Stop any previous speech
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  };
+  
   useEffect(() => {
     setIsMounted(true);
-    // Ensure speech is cancelled when the component unmounts
+    // Ensure speech is cancelled and listeners are removed when the component unmounts
     return () => {
-      if ("speechSynthesis" in window && window.speechSynthesis.speaking) {
+      if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
+      document.body.classList.remove("tts-enabled");
+      document.body.removeEventListener("click", handleTextClick);
     };
   }, []);
 
@@ -50,6 +67,27 @@ export function AccessibilityMenu() {
     }
   }, [isMounted]);
 
+  useEffect(() => {
+    if (!isMounted) return;
+
+    if (isTtsEnabled) {
+      document.body.classList.add("tts-enabled");
+      document.body.addEventListener("click", handleTextClick);
+    } else {
+      document.body.classList.remove("tts-enabled");
+      document.body.removeEventListener("click", handleTextClick);
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    // Cleanup function to remove event listener when isTtsEnabled changes or component unmounts
+    return () => {
+      document.body.classList.remove("tts-enabled");
+      document.body.removeEventListener("click", handleTextClick);
+    };
+  }, [isTtsEnabled, isMounted]);
+
   const toggleHighContrast = (checked: boolean) => {
     setIsHighContrast(checked);
     document.documentElement.classList.toggle("high-contrast", checked);
@@ -58,20 +96,9 @@ export function AccessibilityMenu() {
   
   const toggleTts = (checked: boolean) => {
     setIsTtsEnabled(checked);
-
     if (!("speechSynthesis" in window)) {
       console.warn("Text-to-Speech is not supported in this browser.");
       return;
-    }
-
-    if (checked) {
-      const mainContent = document.querySelector("main")?.innerText;
-      if (mainContent) {
-        const utterance = new SpeechSynthesisUtterance(mainContent);
-        window.speechSynthesis.speak(utterance);
-      }
-    } else {
-      window.speechSynthesis.cancel();
     }
   };
 
@@ -101,7 +128,7 @@ export function AccessibilityMenu() {
     localStorage.removeItem("font-size");
     
     // Reset TTS
-    if ("speechSynthesis" in window && window.speechSynthesis.speaking) {
+    if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
     setIsTtsEnabled(false);
@@ -143,7 +170,7 @@ export function AccessibilityMenu() {
           <div className="flex items-center justify-between">
             <Label htmlFor="tts-mode" className="flex items-center gap-2">
               {isTtsEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-              <span>Read Page Aloud</span>
+              <span>Click to Speak</span>
             </Label>
             <Switch
               id="tts-mode"
