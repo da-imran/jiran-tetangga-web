@@ -1,11 +1,10 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from 'next/image';
-import { format } from "date-fns";
+import { format, subDays, isSameDay, formatDistanceToNow } from "date-fns";
 import { Calendar as CalendarIcon, CalendarDays, Eye, PenSquare, Store, Trees, TrafficCone } from "lucide-react";
-import axios from 'axios';
 
 import { cn } from "@/lib/utils";
 import { DashboardCard } from "@/components/dashboard-card";
@@ -17,12 +16,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { EventRegistrationForm } from "@/components/event-registration-form";
 
-// const roadDisruptions = [
-//   { id: 1, title: "Jalan Cenderai Water Pipe Burst", time: "2 hours ago" },
-//   { id: 2, title: "Accident near Taman Rinting exit", time: "5 hours ago" },
-//   { id: 3, title: "Roadworks on Jalan Merbuk until 5 PM", time: "8 hours ago" },
-//   { id: 4, title: "Fallen tree on Jalan Delima", time: "1 day ago" },
-// ];
+type RoadDisruption = { id: number; title: string; date: Date };
+
+const allRoadDisruptions: RoadDisruption[] = [
+  { id: 1, title: "Jalan Cenderai Water Pipe Burst", date: new Date() },
+  { id: 2, title: "Accident near Taman Rinting exit", date: new Date() },
+  { id: 3, title: "Roadworks on Jalan Merbuk until 5 PM", date: subDays(new Date(), 1) },
+  { id: 4, title: "Fallen tree on Jalan Delima", date: subDays(new Date(), 2) },
+  { id: 5, title: "Pothole repair on Lebuhraya Timur", date: subDays(new Date(), 3) },
+  { id: 6, title: "Traffic light malfunction at Persiaran Dahlia", date: subDays(new Date(), 5) },
+  { id: 7, title: "Lane closure on Jalan Utama for cleaning", date: subDays(new Date(), 6) },
+];
 
 const localEvents = [
   { id: 1, title: "Community Gotong-Royong", date: "28 July 2024", time: "8:00 AM", description: "Join us for a community clean-up event. Let's make our neighborhood cleaner and greener together. Gloves and trash bags will be provided." },
@@ -49,25 +53,15 @@ export default function Home() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsContent, setDetailsContent] = useState<{ title: string; description: string; content: React.ReactNode } | null>(null);
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
-  const [roadDisruptions, setRoadDisruptions] = useState([]);
+  const [roadDisruptionDate, setRoadDisruptionDate] = useState<Date | undefined>(new Date());
+  
+  const filteredRoadDisruptions = useMemo(() => {
+    if (!roadDisruptionDate) return [];
+    return allRoadDisruptions.filter((disruption) =>
+      isSameDay(disruption.date, roadDisruptionDate)
+    );
+  }, [roadDisruptionDate]);
 
-  useEffect(() => {
-    const fetchRoadDisruptions = async () => {
-      try {
-        const response = await axios.get('http/jirantetangga/v1/news');
-        if (response && response.data) {
-          setRoadDisruptions(response.data);
-        } else {
-          console.log('No data found!');
-          setRoadDisruptions([]);
-        }
-      } catch (error) {
-        console.error("Error fetching road disruptions:", error);
-      }
-    };
-
-    fetchRoadDisruptions();
-  }, []);
 
   const handleViewImage = (src: string, alt: string, hint: string) => {
     setSelectedImageData({ src, alt, hint });
@@ -131,14 +125,14 @@ export default function Home() {
             icon={<TrafficCone className="h-6 w-6 text-destructive" />}
             description="Latest updates on traffic and road closures."
             onSeeMore={() => handleSeeMore(
-              "All Road Disruptions",
-              "Here are all the recent road disruptions.",
+              "All Road Disruptions (Last 7 Days)",
+              "Here are all the recent road disruptions from the past 7 days.",
               <ul className="space-y-4">
-                {roadDisruptions.length > 0 ? (
-                  roadDisruptions.map((disruption: any) => (
+                {allRoadDisruptions.length > 0 ? (
+                  allRoadDisruptions.map((disruption: RoadDisruption) => (
                     <li key={disruption.id} className="flex items-start justify-between rounded-md border p-4" data-speakable="true">
                       <span className="text-sm font-medium">{disruption.title}</span>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">{disruption.time}</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">{format(disruption.date, "PPP")}</span>
                     </li>
                   ))
                 ) : (
@@ -147,18 +141,47 @@ export default function Home() {
               </ul>
             )}
           >
-            <ul className="space-y-4 rounded-md bg-destructive/10 p-4">
-              {roadDisruptions.length > 0 ? (
-                roadDisruptions.slice(0, 3).map((disruption: any) => (
-                  <li key={disruption.id} className="flex items-start justify-between" data-speakable="true">
-                    <span className="text-sm font-medium">{disruption.title}</span>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">{disruption.time}</span>
-                  </li>
-                ))
-              ) : (
-                <p data-speakable="true">No available data.</p>
-              )}
-            </ul>
+            <div className="flex flex-col gap-4">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !roadDisruptionDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {roadDisruptionDate ? format(roadDisruptionDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={roadDisruptionDate}
+                    onSelect={setRoadDisruptionDate}
+                    initialFocus
+                    disabled={(date) =>
+                      date > new Date() || date < subDays(new Date(), 7)
+                    }
+                  />
+                </PopoverContent>
+              </Popover>
+              <ul className="space-y-4 rounded-md bg-destructive/10 p-4">
+                {filteredRoadDisruptions.length > 0 ? (
+                  filteredRoadDisruptions.map((disruption: RoadDisruption) => (
+                    <li key={disruption.id} className="flex items-start justify-between" data-speakable="true">
+                      <span className="text-sm font-medium">{disruption.title}</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDistanceToNow(disruption.date, { addSuffix: true })}
+                      </span>
+                    </li>
+                  ))
+                ) : (
+                  <p data-speakable="true">No disruptions reported for this day.</p>
+                )}
+              </ul>
+            </div>
           </DashboardCard>
 
           <DashboardCard
