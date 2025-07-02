@@ -27,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address." }),
   category: z.string().min(1, { message: "Please select a category." }),
   location: z.string().min(5, "Location details are required.").max(100),
   description: z.string().min(10, "Description is required.").max(250),
@@ -39,6 +40,7 @@ export function IssueReportForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      email: "",
       location: "",
       description: "",
       category: "",
@@ -57,6 +59,19 @@ export function IssueReportForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem data-speakable="true">
+              <FormLabel>Your Email Address</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="e.g., johndoe@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="category"

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AppHeader } from "@/components/header";
 import {
   Table,
@@ -35,43 +35,80 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 const roadDisruptions = [
   { id: 1, title: "Jalan Cenderai Water Pipe Burst", time: "2 hours ago" },
   { id: 2, title: "Accident near Taman Rinting exit", time: "5 hours ago" },
   { id: 3, title: "Roadworks on Jalan Merbuk until 5 PM", time: "8 hours ago" },
   { id: 4, title: "Fallen tree on Jalan Delima", time: "1 day ago" },
+  { id: 5, title: "Pothole repair on Jalan Seri Austin", time: "2 days ago" },
+  { id: 6, title: "Traffic light out at Jalan Perjiranan", time: "3 days ago" },
 ];
 
 const localEvents = [
   { id: 1, title: "Community Gotong-Royong", date: "28 July 2024", time: "8:00 AM" },
   { id: 2, title: "Weekly Pasar Malam", date: "Every Friday", time: "5:00 PM - 10:00 PM" },
   { id: 3, title: "Sungai Tiram Fun Run", date: "15 August 2024", time: "7:00 AM" },
+  { id: 4, title: "National Day Celebration", date: "31 August 2024", time: "9:00 AM" },
+  { id: 5, title: "Gardening Workshop", date: "5 September 2024", time: "10:00 AM" },
 ];
 
 const eventProposals = [
   { id: 1, eventName: "Charity Flea Market", eventDate: "25 August 2024", description: "A flea market to raise funds for the local animal shelter.", organizerName: "Jane Doe", organizerEmail: "jane.d@example.com" },
   { id: 2, eventName: "Neighborhood Movie Night", eventDate: "5 September 2024", description: "Outdoor screening of a family-friendly movie at the community park.", organizerName: "John Smith", organizerEmail: "john.s@example.com" },
+  { id: 3, eventName: "Zumba Fitness Class", eventDate: "12 September 2024", description: "Weekly zumba class for all residents.", organizerName: "Alicia Keys", organizerEmail: "alicia.k@example.com" },
+  { id: 4, eventName: "Baking Competition", eventDate: "20 October 2024", description: "A friendly baking competition for all ages.", organizerName: "Gordon Ramsay", organizerEmail: "gordon.r@example.com" },
 ];
 
 const shopNotifications = [
   { id: 1, title: "New Bakery 'Roti Sedap' now open!", location: "Lot 23, Jalan Nuri", status: "new" },
   { id: 2, title: "Kedai Runcit Ah Meng has closed", location: "No. 12, Jalan Merpati", status: "closed" },
   { id: 3, title: "Grand Opening: Bubble Tea Shop", location: "Near 7-Eleven", status: "new" },
+  { id: 4, title: "Hardware store 20% discount", location: "Jalan Delima 5", status: "promo" },
+  { id: 5, title: "Clinic opening soon", location: "Taman Daya", status: "new" },
 ];
 
 const parkStatus = [
   { id: 1, park: "Taman Permainan Utama", status: "open", message: "Playground swings repaired." },
   { id: 2, park: "Taman Rekreasi Sungai Tiram", status: "partial", message: "Jogging track closed for maintenance." },
   { id: 3, park: "Laman Komuniti", status: "open", message: "All facilities are operational." },
+  { id: 4, park: "Park Connector", status: "closed", message: "Upgrade works in progress." },
+  { id: 5, park: "Dog Park", status: "open", message: "New water fountain installed." },
 ];
 
+const ITEMS_PER_PAGE = 3;
 
 export default function AdminDashboardPage() {
   const [action, setAction] = useState<{ type: 'add' | 'edit' | 'delete', itemType: string, data?: any } | null>(null);
   const [isReviewingProposals, setIsReviewingProposals] = useState(false);
   const [proposalToReject, setProposalToReject] = useState<any | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+
+  const [search, setSearch] = useState({
+    roadDisruptions: "",
+    shopNotifications: "",
+    parkStatus: "",
+    localEvents: "",
+    eventProposals: "",
+  });
+
+  const [currentPage, setCurrentPage] = useState({
+    roadDisruptions: 1,
+    shopNotifications: 1,
+    parkStatus: 1,
+    localEvents: 1,
+    eventProposals: 1,
+  });
+
+  const handleSearch = (table: keyof typeof search, value: string) => {
+    setSearch(prev => ({ ...prev, [table]: value }));
+    setCurrentPage(prev => ({ ...prev, [table]: 1 }));
+  };
+
+  const handlePageChange = (table: keyof typeof currentPage, page: number) => {
+    setCurrentPage(prev => ({ ...prev, [table]: page }));
+  };
   
   const handleAction = (type: 'add' | 'edit' | 'delete', itemType: string, data?: any) => {
     setAction({ type, itemType, data });
@@ -83,15 +120,74 @@ export default function AdminDashboardPage() {
   
   const handleRejectSubmit = () => {
     console.log(`Rejecting proposal ${proposalToReject.id} for reason: ${rejectionReason}`);
-    // Here you would typically call an API to reject the proposal
     setProposalToReject(null);
     setRejectionReason('');
   };
 
   const handleApprove = (proposalId: number) => {
     console.log(`Approving proposal ${proposalId}`);
-    // Here you would typically call an API to approve the proposal
   };
+
+  const filteredRoadDisruptions = useMemo(() =>
+    roadDisruptions.filter(item =>
+      item.title.toLowerCase().includes(search.roadDisruptions.toLowerCase())
+    ), [search.roadDisruptions]
+  );
+  const paginatedRoadDisruptions = useMemo(() => {
+    const startIndex = (currentPage.roadDisruptions - 1) * ITEMS_PER_PAGE;
+    return filteredRoadDisruptions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredRoadDisruptions, currentPage.roadDisruptions]);
+  const totalRoadDisruptionPages = Math.ceil(filteredRoadDisruptions.length / ITEMS_PER_PAGE);
+
+  const filteredShopNotifications = useMemo(() =>
+    shopNotifications.filter(item =>
+      item.title.toLowerCase().includes(search.shopNotifications.toLowerCase()) ||
+      item.location.toLowerCase().includes(search.shopNotifications.toLowerCase())
+    ), [search.shopNotifications]
+  );
+  const paginatedShopNotifications = useMemo(() => {
+    const startIndex = (currentPage.shopNotifications - 1) * ITEMS_PER_PAGE;
+    return filteredShopNotifications.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredShopNotifications, currentPage.shopNotifications]);
+  const totalShopNotificationPages = Math.ceil(filteredShopNotifications.length / ITEMS_PER_PAGE);
+  
+  const filteredParkStatus = useMemo(() =>
+    parkStatus.filter(item =>
+      item.park.toLowerCase().includes(search.parkStatus.toLowerCase()) ||
+      item.message.toLowerCase().includes(search.parkStatus.toLowerCase())
+    ), [search.parkStatus]
+  );
+  const paginatedParkStatus = useMemo(() => {
+    const startIndex = (currentPage.parkStatus - 1) * ITEMS_PER_PAGE;
+    return filteredParkStatus.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredParkStatus, currentPage.parkStatus]);
+  const totalParkStatusPages = Math.ceil(filteredParkStatus.length / ITEMS_PER_PAGE);
+
+  const filteredLocalEvents = useMemo(() =>
+    localEvents.filter(item =>
+      item.title.toLowerCase().includes(search.localEvents.toLowerCase()) ||
+      item.date.toLowerCase().includes(search.localEvents.toLowerCase()) ||
+      item.time.toLowerCase().includes(search.localEvents.toLowerCase())
+    ), [search.localEvents]
+  );
+  const paginatedLocalEvents = useMemo(() => {
+    const startIndex = (currentPage.localEvents - 1) * ITEMS_PER_PAGE;
+    return filteredLocalEvents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredLocalEvents, currentPage.localEvents]);
+  const totalLocalEventPages = Math.ceil(filteredLocalEvents.length / ITEMS_PER_PAGE);
+
+  const filteredEventProposals = useMemo(() =>
+    eventProposals.filter(item =>
+      Object.values(item).some(val =>
+        String(val).toLowerCase().includes(search.eventProposals.toLowerCase())
+      )
+    ), [search.eventProposals]
+  );
+  const paginatedEventProposals = useMemo(() => {
+    const startIndex = (currentPage.eventProposals - 1) * ITEMS_PER_PAGE;
+    return filteredEventProposals.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredEventProposals, currentPage.eventProposals]);
+  const totalEventProposalPages = Math.ceil(filteredEventProposals.length / ITEMS_PER_PAGE);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -106,12 +202,20 @@ export default function AdminDashboardPage() {
                   Manage all road disruption reports.
                 </CardDescription>
               </div>
-              <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Road Disruption')}>
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Add New
-                </span>
-              </Button>
+              <div className="flex items-center gap-2">
+                 <Input
+                  placeholder="Search disruptions..."
+                  value={search.roadDisruptions}
+                  onChange={(e) => handleSearch('roadDisruptions', e.target.value)}
+                  className="w-full sm:w-auto"
+                />
+                <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Road Disruption')}>
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Add New
+                  </span>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -123,7 +227,7 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {roadDisruptions.map((item) => (
+                  {paginatedRoadDisruptions.length > 0 ? paginatedRoadDisruptions.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
                       <TableCell data-speakable="true">{item.time}</TableCell>
@@ -136,10 +240,37 @@ export default function AdminDashboardPage() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )) : (
+                     <TableRow>
+                        <TableCell colSpan={3} className="text-center h-24">No results found.</TableCell>
+                     </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
+             <CardFooter className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage.roadDisruptions} of {totalRoadDisruptionPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('roadDisruptions', currentPage.roadDisruptions - 1)}
+                  disabled={currentPage.roadDisruptions <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('roadDisruptions', currentPage.roadDisruptions + 1)}
+                  disabled={currentPage.roadDisruptions >= totalRoadDisruptionPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </CardFooter>
           </Card>
 
           <Card>
@@ -150,12 +281,20 @@ export default function AdminDashboardPage() {
                   Manage local business notifications.
                 </CardDescription>
               </div>
-              <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Shop Notification')}>
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Add New
-                </span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Search notifications..."
+                  value={search.shopNotifications}
+                  onChange={(e) => handleSearch('shopNotifications', e.target.value)}
+                  className="w-full sm:w-auto"
+                />
+                <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Shop Notification')}>
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Add New
+                  </span>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -168,12 +307,12 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {shopNotifications.map((item) => (
+                   {paginatedShopNotifications.length > 0 ? paginatedShopNotifications.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
                       <TableCell data-speakable="true">{item.location}</TableCell>
                       <TableCell>
-                        <Badge data-speakable="true" variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
+                        <Badge data-speakable="true" variant={item.status === 'new' ? 'default' : item.status === 'promo' ? 'secondary' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : item.status === 'promo' ? 'bg-blue-500 text-white' : ''}>
                           {item.status}
                         </Badge>
                       </TableCell>
@@ -186,10 +325,37 @@ export default function AdminDashboardPage() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )) : (
+                     <TableRow>
+                        <TableCell colSpan={4} className="text-center h-24">No results found.</TableCell>
+                     </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
+            <CardFooter className="flex justify-between items-center">
+               <span className="text-sm text-muted-foreground">
+                Page {currentPage.shopNotifications} of {totalShopNotificationPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('shopNotifications', currentPage.shopNotifications - 1)}
+                  disabled={currentPage.shopNotifications <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('shopNotifications', currentPage.shopNotifications + 1)}
+                  disabled={currentPage.shopNotifications >= totalShopNotificationPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </CardFooter>
           </Card>
 
           <Card>
@@ -198,12 +364,20 @@ export default function AdminDashboardPage() {
                 <CardTitle data-speakable="true">Park Status</CardTitle>
                 <CardDescription data-speakable="true">Manage local park statuses.</CardDescription>
               </div>
-              <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Park Status')}>
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Add New
-                </span>
-              </Button>
+               <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Search parks..."
+                  value={search.parkStatus}
+                  onChange={(e) => handleSearch('parkStatus', e.target.value)}
+                  className="w-full sm:w-auto"
+                />
+                <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Park Status')}>
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Add New
+                  </span>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -216,7 +390,7 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {parkStatus.map((item) => (
+                  {paginatedParkStatus.length > 0 ? paginatedParkStatus.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium" data-speakable="true">{item.park}</TableCell>
                       <TableCell data-speakable="true">{item.message}</TableCell>
@@ -234,10 +408,37 @@ export default function AdminDashboardPage() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )) : (
+                     <TableRow>
+                        <TableCell colSpan={4} className="text-center h-24">No results found.</TableCell>
+                     </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
+             <CardFooter className="flex justify-between items-center">
+               <span className="text-sm text-muted-foreground">
+                Page {currentPage.parkStatus} of {totalParkStatusPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('parkStatus', currentPage.parkStatus - 1)}
+                  disabled={currentPage.parkStatus <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('parkStatus', currentPage.parkStatus + 1)}
+                  disabled={currentPage.parkStatus >= totalParkStatusPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </CardFooter>
           </Card>
 
           <Card>
@@ -247,6 +448,12 @@ export default function AdminDashboardPage() {
                 <CardDescription data-speakable="true">Manage community events and review proposals.</CardDescription>
               </div>
               <div className="flex items-center gap-2">
+                <Input
+                    placeholder="Search events..."
+                    value={search.localEvents}
+                    onChange={(e) => handleSearch('localEvents', e.target.value)}
+                    className="w-full sm:w-auto"
+                  />
                 <Button size="sm" className="gap-1" onClick={() => setIsReviewingProposals(true)}>
                   <Bell className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -272,7 +479,7 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {localEvents.map((item) => (
+                  {paginatedLocalEvents.length > 0 ? paginatedLocalEvents.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
                       <TableCell data-speakable="true">{item.date}</TableCell>
@@ -286,10 +493,37 @@ export default function AdminDashboardPage() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )) : (
+                     <TableRow>
+                        <TableCell colSpan={4} className="text-center h-24">No results found.</TableCell>
+                     </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
+            <CardFooter className="flex justify-between items-center">
+               <span className="text-sm text-muted-foreground">
+                Page {currentPage.localEvents} of {totalLocalEventPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('localEvents', currentPage.localEvents - 1)}
+                  disabled={currentPage.localEvents <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('localEvents', currentPage.localEvents + 1)}
+                  disabled={currentPage.localEvents >= totalLocalEventPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </CardFooter>
           </Card>
         </div>
       </main>
@@ -347,9 +581,15 @@ export default function AdminDashboardPage() {
               Approve or reject the following event proposals.
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-[70vh] overflow-y-auto p-1">
-            <div className="space-y-4">
-              {eventProposals.map((proposal) => (
+          <div className="p-1">
+             <Input
+                placeholder="Search proposals..."
+                value={search.eventProposals}
+                onChange={(e) => handleSearch('eventProposals', e.target.value)}
+                className="w-full mb-4"
+              />
+            <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+              {paginatedEventProposals.length > 0 ? paginatedEventProposals.map((proposal) => (
                 <Card key={proposal.id}>
                   <CardHeader>
                     <CardTitle data-speakable="true">{proposal.eventName}</CardTitle>
@@ -364,9 +604,34 @@ export default function AdminDashboardPage() {
                     <Button variant="destructive" onClick={() => setProposalToReject(proposal)}>Reject</Button>
                   </CardFooter>
                 </Card>
-              ))}
+              )) : (
+                <div className="text-center text-muted-foreground py-12">No proposals found.</div>
+              )}
             </div>
           </div>
+          <DialogFooter className="flex justify-between items-center pt-4 border-t mt-2">
+               <span className="text-sm text-muted-foreground">
+                Page {currentPage.eventProposals} of {totalEventProposalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('eventProposals', currentPage.eventProposals - 1)}
+                  disabled={currentPage.eventProposals <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('eventProposals', currentPage.eventProposals + 1)}
+                  disabled={currentPage.eventProposals >= totalEventProposalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
       
@@ -400,3 +665,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
