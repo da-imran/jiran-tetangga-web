@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bell, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { Bell, Pencil, PlusCircle, Trash2, ArrowUpDown, ChevronDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -33,17 +33,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { formatDistanceToNow, subDays, subHours } from "date-fns";
+
 
 const roadDisruptions = [
-  { id: 1, title: "Jalan Cenderai Water Pipe Burst", time: "2 hours ago" },
-  { id: 2, title: "Accident near Taman Rinting exit", time: "5 hours ago" },
-  { id: 3, title: "Roadworks on Jalan Merbuk until 5 PM", time: "8 hours ago" },
-  { id: 4, title: "Fallen tree on Jalan Delima", time: "1 day ago" },
-  { id: 5, title: "Pothole repair on Jalan Seri Austin", time: "2 days ago" },
-  { id: 6, title: "Traffic light out at Jalan Perjiranan", time: "3 days ago" },
+  { id: 1, title: "Jalan Cenderai Water Pipe Burst", date: subHours(new Date(), 2) },
+  { id: 2, title: "Accident near Taman Rinting exit", date: subHours(new Date(), 5) },
+  { id: 3, title: "Roadworks on Jalan Merbuk until 5 PM", date: subHours(new Date(), 8) },
+  { id: 4, title: "Fallen tree on Jalan Delima", date: subDays(new Date(), 1) },
+  { id: 5, title: "Pothole repair on Jalan Seri Austin", date: subDays(new Date(), 2) },
+  { id: 6, title: "Traffic light out at Jalan Perjiranan", date: subDays(new Date(), 3) },
 ];
 
 const localEvents = [
@@ -55,10 +58,10 @@ const localEvents = [
 ];
 
 const eventProposals = [
-  { id: 1, eventName: "Charity Flea Market", eventDate: "25 August 2024", description: "A flea market to raise funds for the local animal shelter.", organizerName: "Jane Doe", organizerEmail: "jane.d@example.com" },
-  { id: 2, eventName: "Neighborhood Movie Night", eventDate: "5 September 2024", description: "Outdoor screening of a family-friendly movie at the community park.", organizerName: "John Smith", organizerEmail: "john.s@example.com" },
-  { id: 3, eventName: "Zumba Fitness Class", eventDate: "12 September 2024", description: "Weekly zumba class for all residents.", organizerName: "Alicia Keys", organizerEmail: "alicia.k@example.com" },
-  { id: 4, eventName: "Baking Competition", eventDate: "20 October 2024", description: "A friendly baking competition for all ages.", organizerName: "Gordon Ramsay", organizerEmail: "gordon.r@example.com" },
+  { id: 1, eventName: "Charity Flea Market", eventDate: new Date("2024-08-25"), description: "A flea market to raise funds for the local animal shelter.", organizerName: "Jane Doe", organizerEmail: "jane.d@example.com" },
+  { id: 2, eventName: "Neighborhood Movie Night", eventDate: new Date("2024-09-05"), description: "Outdoor screening of a family-friendly movie at the community park.", organizerName: "John Smith", organizerEmail: "john.s@example.com" },
+  { id: 3, eventName: "Zumba Fitness Class", eventDate: new Date("2024-09-12"), description: "Weekly zumba class for all residents.", organizerName: "Alicia Keys", organizerEmail: "alicia.k@example.com" },
+  { id: 4, eventName: "Baking Competition", eventDate: new Date("2024-10-20"), description: "A friendly baking competition for all ages.", organizerName: "Gordon Ramsay", organizerEmail: "gordon.r@example.com" },
 ];
 
 const shopNotifications = [
@@ -78,6 +81,11 @@ const parkStatus = [
 ];
 
 const ITEMS_PER_PAGE = 3;
+type SortDirection = "ascending" | "descending";
+interface SortConfig {
+  key: string;
+  direction: SortDirection;
+}
 
 export default function AdminDashboardPage() {
   const [action, setAction] = useState<{ type: 'add' | 'edit' | 'delete', itemType: string, data?: any } | null>(null);
@@ -100,6 +108,42 @@ export default function AdminDashboardPage() {
     localEvents: 1,
     eventProposals: 1,
   });
+
+  const [sortConfig, setSortConfig] = useState<{ [key: string]: SortConfig }>({
+    roadDisruptions: { key: 'date', direction: 'descending' },
+    shopNotifications: { key: 'title', direction: 'ascending' },
+    parkStatus: { key: 'park', direction: 'ascending' },
+    localEvents: { key: 'title', direction: 'ascending' },
+    eventProposals: { key: 'eventName', direction: 'ascending' },
+  });
+
+  const [filters, setFilters] = useState<{ [key: string]: string[] }>({
+    shopNotifications: [],
+    parkStatus: [],
+  });
+  
+  const handleSort = (table: keyof typeof sortConfig, key: string) => {
+    setSortConfig(prev => {
+      const currentDirection = prev[table].direction;
+      const currentKey = prev[table].key;
+      let direction: SortDirection = 'ascending';
+      if (currentKey === key && currentDirection === 'ascending') {
+        direction = 'descending';
+      }
+      return { ...prev, [table]: { key, direction } };
+    });
+  };
+  
+  const handleFilterChange = (table: keyof typeof filters, value: string) => {
+    setFilters(prev => {
+      const currentFilters = prev[table];
+      const newFilters = currentFilters.includes(value)
+        ? currentFilters.filter(item => item !== value)
+        : [...currentFilters, value];
+      return { ...prev, [table]: newFilters };
+    });
+    handlePageChange(table as keyof typeof currentPage, 1);
+  };
 
   const handleSearch = (table: keyof typeof search, value: string) => {
     setSearch(prev => ({ ...prev, [table]: value }));
@@ -127,62 +171,132 @@ export default function AdminDashboardPage() {
   const handleApprove = (proposalId: number) => {
     console.log(`Approving proposal ${proposalId}`);
   };
+  
+  const SortArrow = ({ columnKey, table }: { columnKey: string, table: keyof typeof sortConfig }) => {
+    if (sortConfig[table].key !== columnKey) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    return sortConfig[table].direction === 'ascending' ? '▲' : '▼';
+  };
 
-  const filteredRoadDisruptions = useMemo(() =>
-    roadDisruptions.filter(item =>
+  const filteredRoadDisruptions = useMemo(() => {
+    let items = roadDisruptions.filter(item =>
       item.title.toLowerCase().includes(search.roadDisruptions.toLowerCase())
-    ), [search.roadDisruptions]
-  );
+    );
+
+    const { key, direction } = sortConfig.roadDisruptions;
+    items.sort((a, b) => {
+      const aValue = a[key as keyof typeof a];
+      const bValue = b[key as keyof typeof b];
+      if (aValue < bValue) return direction === 'ascending' ? -1 : 1;
+      if (aValue > bValue) return direction === 'ascending' ? 1 : -1;
+      return 0;
+    });
+
+    return items;
+  }, [search.roadDisruptions, sortConfig.roadDisruptions]);
   const paginatedRoadDisruptions = useMemo(() => {
     const startIndex = (currentPage.roadDisruptions - 1) * ITEMS_PER_PAGE;
     return filteredRoadDisruptions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredRoadDisruptions, currentPage.roadDisruptions]);
   const totalRoadDisruptionPages = Math.ceil(filteredRoadDisruptions.length / ITEMS_PER_PAGE);
 
-  const filteredShopNotifications = useMemo(() =>
-    shopNotifications.filter(item =>
+  const filteredShopNotifications = useMemo(() => {
+    let items = [...shopNotifications];
+    
+    if (filters.shopNotifications.length > 0) {
+      items = items.filter(item => filters.shopNotifications.includes(item.status));
+    }
+
+    items = items.filter(item =>
       item.title.toLowerCase().includes(search.shopNotifications.toLowerCase()) ||
       item.location.toLowerCase().includes(search.shopNotifications.toLowerCase())
-    ), [search.shopNotifications]
-  );
+    );
+
+    const { key, direction } = sortConfig.shopNotifications;
+    items.sort((a, b) => {
+      const aValue = a[key as keyof typeof a];
+      const bValue = b[key as keyof typeof b];
+      if (aValue < bValue) return direction === 'ascending' ? -1 : 1;
+      if (aValue > bValue) return direction === 'ascending' ? 1 : -1;
+      return 0;
+    });
+
+    return items;
+  }, [search.shopNotifications, sortConfig.shopNotifications, filters.shopNotifications]);
   const paginatedShopNotifications = useMemo(() => {
     const startIndex = (currentPage.shopNotifications - 1) * ITEMS_PER_PAGE;
     return filteredShopNotifications.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredShopNotifications, currentPage.shopNotifications]);
   const totalShopNotificationPages = Math.ceil(filteredShopNotifications.length / ITEMS_PER_PAGE);
   
-  const filteredParkStatus = useMemo(() =>
-    parkStatus.filter(item =>
+  const filteredParkStatus = useMemo(() => {
+     let items = [...parkStatus];
+    
+    if (filters.parkStatus.length > 0) {
+      items = items.filter(item => filters.parkStatus.includes(item.status));
+    }
+
+    items = items.filter(item =>
       item.park.toLowerCase().includes(search.parkStatus.toLowerCase()) ||
       item.message.toLowerCase().includes(search.parkStatus.toLowerCase())
-    ), [search.parkStatus]
-  );
+    );
+    
+    const { key, direction } = sortConfig.parkStatus;
+    items.sort((a, b) => {
+      const aValue = a[key as keyof typeof a] as string;
+      const bValue = b[key as keyof typeof b] as string;
+      return direction === 'ascending' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+    });
+
+    return items;
+  }, [search.parkStatus, sortConfig.parkStatus, filters.parkStatus]);
   const paginatedParkStatus = useMemo(() => {
     const startIndex = (currentPage.parkStatus - 1) * ITEMS_PER_PAGE;
     return filteredParkStatus.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredParkStatus, currentPage.parkStatus]);
   const totalParkStatusPages = Math.ceil(filteredParkStatus.length / ITEMS_PER_PAGE);
 
-  const filteredLocalEvents = useMemo(() =>
-    localEvents.filter(item =>
+  const filteredLocalEvents = useMemo(() => {
+    let items = localEvents.filter(item =>
       item.title.toLowerCase().includes(search.localEvents.toLowerCase()) ||
       item.date.toLowerCase().includes(search.localEvents.toLowerCase()) ||
       item.time.toLowerCase().includes(search.localEvents.toLowerCase())
-    ), [search.localEvents]
-  );
+    );
+
+    const { key, direction } = sortConfig.localEvents;
+    items.sort((a, b) => {
+      const aValue = a[key as keyof typeof a] as string;
+      const bValue = b[key as keyof typeof b] as string;
+      return direction === 'ascending' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+    });
+
+    return items;
+  }, [search.localEvents, sortConfig.localEvents]);
   const paginatedLocalEvents = useMemo(() => {
     const startIndex = (currentPage.localEvents - 1) * ITEMS_PER_PAGE;
     return filteredLocalEvents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredLocalEvents, currentPage.localEvents]);
   const totalLocalEventPages = Math.ceil(filteredLocalEvents.length / ITEMS_PER_PAGE);
 
-  const filteredEventProposals = useMemo(() =>
-    eventProposals.filter(item =>
+  const filteredEventProposals = useMemo(() => {
+    let items = eventProposals.filter(item =>
       Object.values(item).some(val =>
         String(val).toLowerCase().includes(search.eventProposals.toLowerCase())
       )
-    ), [search.eventProposals]
-  );
+    );
+
+    const { key, direction } = sortConfig.eventProposals;
+    items.sort((a, b) => {
+      const aValue = a[key as keyof typeof a];
+      const bValue = b[key as keyof typeof b];
+      if (aValue < bValue) return direction === 'ascending' ? -1 : 1;
+      if (aValue > bValue) return direction === 'ascending' ? 1 : -1;
+      return 0;
+    });
+
+    return items;
+  }, [search.eventProposals, sortConfig.eventProposals]);
   const paginatedEventProposals = useMemo(() => {
     const startIndex = (currentPage.eventProposals - 1) * ITEMS_PER_PAGE;
     return filteredEventProposals.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -221,8 +335,18 @@ export default function AdminDashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead data-speakable="true">Title</TableHead>
-                    <TableHead data-speakable="true">Reported</TableHead>
+                    <TableHead>
+                      <Button variant="ghost" onClick={() => handleSort('roadDisruptions', 'title')} data-speakable="true">
+                        Title
+                        <SortArrow table="roadDisruptions" columnKey="title" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" onClick={() => handleSort('roadDisruptions', 'date')} data-speakable="true">
+                        Reported
+                        <SortArrow table="roadDisruptions" columnKey="date" />
+                      </Button>
+                    </TableHead>
                     <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -230,7 +354,7 @@ export default function AdminDashboardPage() {
                   {paginatedRoadDisruptions.length > 0 ? paginatedRoadDisruptions.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
-                      <TableCell data-speakable="true">{item.time}</TableCell>
+                      <TableCell data-speakable="true">{formatDistanceToNow(item.date, { addSuffix: true })}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Road Disruption', item)}>
                           <Pencil className="h-4 w-4" />
@@ -288,6 +412,25 @@ export default function AdminDashboardPage() {
                   onChange={(e) => handleSearch('shopNotifications', e.target.value)}
                   className="w-full sm:w-auto"
                 />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="ml-auto">
+                      Status <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {['new', 'closed', 'promo'].map((status) => (
+                      <DropdownMenuCheckboxItem
+                        key={status}
+                        className="capitalize"
+                        checked={filters.shopNotifications.includes(status)}
+                        onCheckedChange={() => handleFilterChange('shopNotifications', status)}
+                      >
+                        {status}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Shop Notification')}>
                   <PlusCircle className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -300,9 +443,24 @@ export default function AdminDashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead data-speakable="true">Title</TableHead>
-                    <TableHead data-speakable="true">Location</TableHead>
-                    <TableHead data-speakable="true">Status</TableHead>
+                    <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('shopNotifications', 'title')} data-speakable="true">
+                         Title
+                         <SortArrow table="shopNotifications" columnKey="title" />
+                       </Button>
+                    </TableHead>
+                    <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('shopNotifications', 'location')} data-speakable="true">
+                         Location
+                         <SortArrow table="shopNotifications" columnKey="location" />
+                       </Button>
+                    </TableHead>
+                    <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('shopNotifications', 'status')} data-speakable="true">
+                         Status
+                         <SortArrow table="shopNotifications" columnKey="status" />
+                       </Button>
+                    </TableHead>
                     <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -371,6 +529,25 @@ export default function AdminDashboardPage() {
                   onChange={(e) => handleSearch('parkStatus', e.target.value)}
                   className="w-full sm:w-auto"
                 />
+                 <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="ml-auto">
+                      Status <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {['open', 'closed', 'partial'].map((status) => (
+                      <DropdownMenuCheckboxItem
+                        key={status}
+                        className="capitalize"
+                        checked={filters.parkStatus.includes(status)}
+                        onCheckedChange={() => handleFilterChange('parkStatus', status)}
+                      >
+                        {status}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Park Status')}>
                   <PlusCircle className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -383,9 +560,24 @@ export default function AdminDashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead data-speakable="true">Park</TableHead>
-                    <TableHead data-speakable="true">Message</TableHead>
-                    <TableHead data-speakable="true">Status</TableHead>
+                     <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('parkStatus', 'park')} data-speakable="true">
+                         Park
+                         <SortArrow table="parkStatus" columnKey="park" />
+                       </Button>
+                    </TableHead>
+                    <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('parkStatus', 'message')} data-speakable="true">
+                         Message
+                         <SortArrow table="parkStatus" columnKey="message" />
+                       </Button>
+                    </TableHead>
+                    <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('parkStatus', 'status')} data-speakable="true">
+                         Status
+                         <SortArrow table="parkStatus" columnKey="status" />
+                       </Button>
+                    </TableHead>
                     <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -395,7 +587,7 @@ export default function AdminDashboardPage() {
                       <TableCell className="font-medium" data-speakable="true">{item.park}</TableCell>
                       <TableCell data-speakable="true">{item.message}</TableCell>
                       <TableCell>
-                        <Badge data-speakable="true" variant={item.status === 'open' ? 'default' : 'secondary'} className={item.status === 'open' ? 'bg-green-600' : ''}>
+                        <Badge data-speakable="true" variant={item.status === 'open' ? 'default' : item.status === 'partial' ? 'secondary' : 'destructive'} className={item.status === 'open' ? 'bg-green-600' : item.status === 'partial' ? 'bg-yellow-500' : ''}>
                           {item.status}
                         </Badge>
                       </TableCell>
@@ -472,9 +664,24 @@ export default function AdminDashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead data-speakable="true">Event</TableHead>
-                    <TableHead data-speakable="true">Date</TableHead>
-                    <TableHead data-speakable="true">Time</TableHead>
+                     <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('localEvents', 'title')} data-speakable="true">
+                         Event
+                         <SortArrow table="localEvents" columnKey="title" />
+                       </Button>
+                    </TableHead>
+                    <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('localEvents', 'date')} data-speakable="true">
+                         Date
+                         <SortArrow table="localEvents" columnKey="date" />
+                       </Button>
+                    </TableHead>
+                    <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('localEvents', 'time')} data-speakable="true">
+                         Time
+                         <SortArrow table="localEvents" columnKey="time" />
+                       </Button>
+                    </TableHead>
                     <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -596,7 +803,7 @@ export default function AdminDashboardPage() {
                     <CardDescription data-speakable="true">Proposed by: {proposal.organizerName} ({proposal.organizerEmail})</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
-                    <p data-speakable="true"><span className="font-semibold">Proposed Date:</span> {proposal.eventDate}</p>
+                    <p data-speakable="true"><span className="font-semibold">Proposed Date:</span> {proposal.eventDate.toLocaleDateString()}</p>
                     <p className="text-muted-foreground" data-speakable="true">{proposal.description}</p>
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2">
@@ -665,5 +872,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
