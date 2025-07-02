@@ -28,6 +28,27 @@ const allRoadDisruptions: RoadDisruption[] = [
   { id: 7, title: "Lane closure on Jalan Utama for cleaning", date: subDays(new Date(), 6) },
 ];
 
+// const [roadDisruptions, setRoadDisruptions] = useState([]);
+
+// useEffect(() => {
+//   const fetchRoadDisruptions = async () => {
+//     try {
+//       const response = await axios.get('http/jirantetangga/v1/news');
+//       if (response && response.data) {
+//         setRoadDisruptions(response.data);
+//       } else {
+//         console.log('No data found!');
+//         setRoadDisruptions([]);
+//       }
+//     } catch (error) {
+//       console.error("Error fetching road disruptions:", error);
+//     }
+//   };
+
+//   fetchRoadDisruptions();
+// }, []);
+
+
 const localEvents = [
   { id: 1, title: "Community Gotong-Royong", date: "28 July 2024", time: "8:00 AM", description: "Join us for a community clean-up event. Let's make our neighborhood cleaner and greener together. Gloves and trash bags will be provided." },
   { id: 2, title: "Weekly Pasar Malam", date: "Every Friday", time: "5:00 PM - 10:00 PM", description: "The weekly night market is back! Enjoy a variety of local street food, fresh produce, and unique goods. A great place for the whole family." },
