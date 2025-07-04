@@ -17,8 +17,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { EventRegistrationForm } from "@/components/event-registration-form";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type RoadDisruption = { id: number; title: string; date: Date };
-
 const localEvents = [
   { id: 1, title: "Community Gotong-Royong", date: "28 July 2024", time: "8:00 AM", description: "Join us for a community clean-up event. Let's make our neighborhood cleaner and greener together. Gloves and trash bags will be provided." },
   { id: 2, title: "Weekly Pasar Malam", date: "Every Friday", time: "5:00 PM - 10:00 PM", description: "The weekly night market is back! Enjoy a variety of local street food, fresh produce, and unique goods. A great place for the whole family." },
@@ -46,6 +44,14 @@ export default function Home() {
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
   const [roadDisruptionDate, setRoadDisruptionDate] = useState<Date | undefined>(new Date());
   
+  type RoadDisruption = { 
+    id: number; 
+    title: string;
+    description: string; 
+    date: Date ;
+    category: string;
+    status: boolean;
+  };
   const [roadDisruptions, setRoadDisruptions] = useState<RoadDisruption[]>([]);
   const [loadingDisruptions, setLoadingDisruptions] = useState(true);
 
@@ -53,25 +59,27 @@ export default function Home() {
     const fetchRoadDisruptions = async () => {
       setLoadingDisruptions(true);
       try {
-        // NOTE: This is a placeholder API. Replace with your actual API endpoint.
-        const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=14');
+        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/news');
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
+        console.log('API data:', data.data);
         
-        // The API response needs to be mapped to the RoadDisruption type.
-        // We generate random dates within the last 7 days for demonstration.
-        const formattedData: RoadDisruption[] = data.map((post: any) => ({
-            id: post.id,
-            title: post.title.substring(0, 50),
-            date: subDays(new Date(), Math.floor(Math.random() * 7)), 
+        const formattedData = data.data
+        .filter((post: any) => post.status === true)
+        .map((post: any) => ({
+          id: post._id,
+          title: post.title,
+          description: post.description,
+          date: new Date(post.createdAt),
+          category: post.category,
+          status: post.status,
         }));
 
         setRoadDisruptions(formattedData);
       } catch (error) {
         console.error("Error fetching road disruptions:", error);
-        // You can set an error state here to show an error message to the user
       } finally {
         setLoadingDisruptions(false);
       }
@@ -150,7 +158,7 @@ export default function Home() {
             icon={<TrafficCone className="h-6 w-6 text-destructive" />}
             description="Latest updates on traffic and road closures."
             onSeeMore={() => handleSeeMore(
-              "All Road Disruptions (Last 7 Days)",
+              "All Road Disruptions",
               "Here are all the recent road disruptions from the past 7 days.",
               <ul className="space-y-4">
                 {loadingDisruptions ? (
