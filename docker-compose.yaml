@@ -18,6 +18,13 @@ services:
     ports:
       - 9002:9002
     restart: on-failure
+    networks:
+      - jiran-tetangga-networks
+
+networks:
+  jiran-tetangga-networks:
+    external: true
+    name: jiran-tetangga-networks
 
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to
