@@ -15,39 +15,9 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { EventRegistrationForm } from "@/components/event-registration-form";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type RoadDisruption = { id: number; title: string; date: Date };
-
-const allRoadDisruptions: RoadDisruption[] = [
-  { id: 1, title: "Jalan Cenderai Water Pipe Burst", date: new Date() },
-  { id: 2, title: "Accident near Taman Rinting exit", date: new Date() },
-  { id: 3, title: "Roadworks on Jalan Merbuk until 5 PM", date: subDays(new Date(), 1) },
-  { id: 4, title: "Fallen tree on Jalan Delima", date: subDays(new Date(), 2) },
-  { id: 5, title: "Pothole repair on Lebuhraya Timur", date: subDays(new Date(), 3) },
-  { id: 6, title: "Traffic light malfunction at Persiaran Dahlia", date: subDays(new Date(), 5) },
-  { id: 7, title: "Lane closure on Jalan Utama for cleaning", date: subDays(new Date(), 6) },
-];
-
-// const [roadDisruptions, setRoadDisruptions] = useState([]);
-
-// useEffect(() => {
-//   const fetchRoadDisruptions = async () => {
-//     try {
-//       const response = await axios.get('http/jirantetangga/v1/news');
-//       if (response && response.data) {
-//         setRoadDisruptions(response.data);
-//       } else {
-//         console.log('No data found!');
-//         setRoadDisruptions([]);
-//       }
-//     } catch (error) {
-//       console.error("Error fetching road disruptions:", error);
-//     }
-//   };
-
-//   fetchRoadDisruptions();
-// }, []);
-
 
 const localEvents = [
   { id: 1, title: "Community Gotong-Royong", date: "28 July 2024", time: "8:00 AM", description: "Join us for a community clean-up event. Let's make our neighborhood cleaner and greener together. Gloves and trash bags will be provided." },
@@ -76,12 +46,46 @@ export default function Home() {
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
   const [roadDisruptionDate, setRoadDisruptionDate] = useState<Date | undefined>(new Date());
   
+  const [roadDisruptions, setRoadDisruptions] = useState<RoadDisruption[]>([]);
+  const [loadingDisruptions, setLoadingDisruptions] = useState(true);
+
+  useEffect(() => {
+    const fetchRoadDisruptions = async () => {
+      setLoadingDisruptions(true);
+      try {
+        // NOTE: This is a placeholder API. Replace with your actual API endpoint.
+        const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=14');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        
+        // The API response needs to be mapped to the RoadDisruption type.
+        // We generate random dates within the last 7 days for demonstration.
+        const formattedData: RoadDisruption[] = data.map((post: any) => ({
+            id: post.id,
+            title: post.title.substring(0, 50),
+            date: subDays(new Date(), Math.floor(Math.random() * 7)), 
+        }));
+
+        setRoadDisruptions(formattedData);
+      } catch (error) {
+        console.error("Error fetching road disruptions:", error);
+        // You can set an error state here to show an error message to the user
+      } finally {
+        setLoadingDisruptions(false);
+      }
+    };
+
+    fetchRoadDisruptions();
+  }, []);
+
   const filteredRoadDisruptions = useMemo(() => {
     if (!roadDisruptionDate) return [];
-    return allRoadDisruptions.filter((disruption) =>
+    return roadDisruptions.filter((disruption) =>
       isSameDay(disruption.date, roadDisruptionDate)
     );
-  }, [roadDisruptionDate]);
+  }, [roadDisruptions, roadDisruptionDate]);
 
 
   const handleViewImage = (src: string, alt: string, hint: string) => {
@@ -149,8 +153,14 @@ export default function Home() {
               "All Road Disruptions (Last 7 Days)",
               "Here are all the recent road disruptions from the past 7 days.",
               <ul className="space-y-4">
-                {allRoadDisruptions.length > 0 ? (
-                  allRoadDisruptions.map((disruption: RoadDisruption) => (
+                {loadingDisruptions ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                ) : roadDisruptions.length > 0 ? (
+                  roadDisruptions.map((disruption: RoadDisruption) => (
                     <li key={disruption.id} className="flex items-start justify-between rounded-md border p-4" data-speakable="true">
                       <span className="text-sm font-medium">{disruption.title}</span>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">{format(disruption.date, "PPP")}</span>
@@ -188,8 +198,14 @@ export default function Home() {
                   />
                 </PopoverContent>
               </Popover>
-              <ul className="space-y-4 rounded-md bg-destructive/10 p-4">
-                {filteredRoadDisruptions.length > 0 ? (
+              <ul className="space-y-4 rounded-md bg-destructive/10 p-4 min-h-[100px]">
+                {loadingDisruptions ? (
+                   <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                ) : filteredRoadDisruptions.length > 0 ? (
                   filteredRoadDisruptions.map((disruption: RoadDisruption) => (
                     <li key={disruption.id} className="flex items-start justify-between" data-speakable="true">
                       <span className="text-sm font-medium">{disruption.title}</span>
@@ -377,3 +393,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
