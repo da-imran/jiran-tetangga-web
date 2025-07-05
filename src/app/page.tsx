@@ -170,8 +170,8 @@ export default function Home() {
                 ) : roadDisruptions.length > 0 ? (
                   roadDisruptions.map((disruption: RoadDisruption) => (
                     <li key={disruption.id} className="flex items-start justify-between rounded-md border p-4" data-speakable="true">
-                      <span className="text-sm font-medium">{disruption.title}</span>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">{format(disruption.date, "PPP")}</span>
+                        <span className="text-sm font-medium">{disruption.description}</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">{format(disruption.date, "PPP")}</span>
                     </li>
                   ))
                 ) : (
@@ -216,10 +216,10 @@ export default function Home() {
                 ) : filteredRoadDisruptions.length > 0 ? (
                   filteredRoadDisruptions.map((disruption: RoadDisruption) => (
                     <li key={disruption.id} className="flex items-start justify-between" data-speakable="true">
-                      <span className="text-sm font-medium">{disruption.title}</span>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDistanceToNow(disruption.date, { addSuffix: true })}
-                      </span>
+                        <span className="text-sm font-medium">{disruption.title}</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDistanceToNow(disruption.date, { addSuffix: true })}
+                        </span>
                     </li>
                   ))
                 ) : (
