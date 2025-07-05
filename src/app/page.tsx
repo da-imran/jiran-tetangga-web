@@ -59,7 +59,7 @@ export default function Home() {
     const fetchRoadDisruptions = async () => {
       setLoadingDisruptions(true);
       try {
-        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/news');
+        const response = await fetch('http://192.168.1.16:3500/jiran-tetangga/v1/news');
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
