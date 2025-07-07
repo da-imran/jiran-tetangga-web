@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from 'next/image';
-import { format, subDays, isSameDay, formatDistanceToNow } from "date-fns";
+import { format, parse, subDays, isSameDay, formatDistanceToNow } from "date-fns";
 import { Calendar as CalendarIcon, CalendarDays, Eye, PenSquare, Store, Trees, TrafficCone } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -17,56 +17,80 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { EventRegistrationForm } from "@/components/event-registration-form";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const localEvents = [
-  { id: 1, title: "Community Gotong-Royong", date: "28 July 2024", time: "8:00 AM", description: "Join us for a community clean-up event. Let's make our neighborhood cleaner and greener together. Gloves and trash bags will be provided." },
-  { id: 2, title: "Weekly Pasar Malam", date: "Every Friday", time: "5:00 PM - 10:00 PM", description: "The weekly night market is back! Enjoy a variety of local street food, fresh produce, and unique goods. A great place for the whole family." },
-  { id: 3, title: "Sungai Tiram Fun Run", date: "15 August 2024", time: "7:00 AM", description: "Get your running shoes ready for a 5km fun run around Sungai Tiram. T-shirts and medals for all participants. Register now!" },
-];
-
-const shopNotifications = [
-  { id: 1, title: "New Bakery 'Roti Sedap' now open!", location: "Lot 23, Jalan Nuri", status: "new", image: "https://placehold.co/600x400.png", hint: "bakery bread" },
-  { id: 2, title: "Kedai Runcit Ah Meng has closed", location: "No. 12, Jalan Merpati", status: "closed", image: "https://placehold.co/600x400.png", hint: "convenience store" },
-  { id: 3, title: "Grand Opening: Bubble Tea Shop", location: "Near 7-Eleven", status: "new", image: "https://placehold.co/600x400.png", hint: "bubble tea" },
-];
-
-const parkStatus = [
-  { id: 1, park: "Taman Permainan Utama", status: "open", message: "Playground swings repaired.", image: "https://placehold.co/600x400.png", hint: "playground park" },
-  { id: 2, park: "Taman Rekreasi Sungai Tiram", status: "partial", message: "Jogging track closed for maintenance.", image: "https://placehold.co/600x400.png", hint: "jogging track" },
-  { id: 3, park: "Laman Komuniti", status: "open", message: "All facilities are operational.", image: "https://placehold.co/600x400.png", hint: "community garden" },
-];
-
 export default function Home() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedImageData, setSelectedImageData] = useState<{ src: string; alt: string; hint: string } | null>(null);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsContent, setDetailsContent] = useState<{ title: string; description: string; content: React.ReactNode } | null>(null);
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
   const [roadDisruptionDate, setRoadDisruptionDate] = useState<Date | undefined>(new Date());
+  const [eventsDate, setEventDate] = useState<Date | undefined>(new Date());
   
   type RoadDisruption = { 
-    id: number; 
+    id: string; 
     title: string;
     description: string; 
-    date: Date ;
+    date: Date;
     category: string;
     status: boolean;
   };
+
+  type Events = { 
+    id: string; 
+    title: string;
+    description: string; 
+    date: Date;
+    location: string;
+    status: boolean;
+  };
+
+  type ShopNotification = { 
+    id: string; 
+    name: string; 
+    description: string; 
+    opening: Date;
+    closing: Date;
+    status: string; 
+    image: string; 
+    hint: string
+  };
+
+  type ParkStatus = { 
+    id: string; 
+    park: string; 
+    status: string
+    opening: string;
+    closing: string;
+    message: string; 
+    image: string; 
+    hint: string
+  };
+  
   const [roadDisruptions, setRoadDisruptions] = useState<RoadDisruption[]>([]);
   const [loadingDisruptions, setLoadingDisruptions] = useState(true);
 
+  const [localEvents, setEvents] = useState<Events[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+
+  const [parkStatus, setParkStatus] = useState<ParkStatus[]>([]);
+  const [loadingParkStatus, setLoadingParkStatus] = useState(true);
+
+  const [shopNotifications, setShopNotifications] = useState<ShopNotification[]>([]);
+  const [loadingShopNotifications, setLoadingShopNotifications] = useState(true);
+
+  // Fetch Disruptions API
   useEffect(() => {
-    const fetchRoadDisruptions = async () => {
+    const fetchDisruptions = async () => {
       setLoadingDisruptions(true);
       try {
-        const response = await fetch('http://192.168.1.16:3500/jiran-tetangga/v1/news');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        console.log('API data:', data.data);
+        const disruptionsResponse = await fetch('http://localhost:3500/jiran-tetangga/v1/disruptions');
+        if (!disruptionsResponse.ok) throw new Error('Failed to fetch disruptions');
         
-        const formattedData = data.data
+        // Process disruptions
+        const disruptionsData = await disruptionsResponse.json();
+        console.log('Disruptions API data:', disruptionsData.data);
+
+        const formattedDisruptions = disruptionsData.data
         .filter((post: any) => post.status === true)
         .map((post: any) => ({
           id: post._id,
@@ -76,8 +100,8 @@ export default function Home() {
           category: post.category,
           status: post.status,
         }));
+        setRoadDisruptions(formattedDisruptions);
 
-        setRoadDisruptions(formattedData);
       } catch (error) {
         console.error("Error fetching road disruptions:", error);
       } finally {
@@ -85,9 +109,103 @@ export default function Home() {
       }
     };
 
-    fetchRoadDisruptions();
+    fetchDisruptions();
   }, []);
 
+  // Fetch Shops API
+  useEffect(() => {
+    const fetchShopNotifications = async () => {
+      setLoadingShopNotifications(true);
+      try {
+        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/shops');
+        if (!response.ok) throw new Error('Failed to fetch shops');
+
+        // Process shops
+        const shopsData = await response.json();
+        console.log('Shops API data:', shopsData.data);
+
+        const formattedShops = shopsData.data
+        .map((post: any) => ({
+          id: post._id,
+          name: post.name,
+          description: post.description,
+          opening: format(parse(post.openingHours.opening, 'HHmm', new Date()), 'hh:mm a'),
+          closing: format(parse(post.openingHours.closing, 'HHmm', new Date()), 'hh:mm a'),
+          status: post.status,
+          image: `https://placehold.co/600x400.png?text=${post.name.replace(/\s+/g, '+')}`,
+          hint: 'shop',
+        }));
+        setShopNotifications(formattedShops);
+      } catch (error) {
+        console.error("Error fetching shop notifications:", error);
+      } finally {
+        setLoadingShopNotifications(false);
+      }
+    };
+    fetchShopNotifications();
+  }, []);
+
+  // Fetch Parks API - incomplete
+  useEffect(() => {
+    const fetchParkStatus = async () => {
+      setLoadingParkStatus(true);
+      try {
+        // NOTE: This is a placeholder API. Replace with your actual API endpoint.
+        const response = await fetch('https://jsonplaceholder.typicode.com/albums?_limit=5');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        const formattedData: ParkStatus[] = data.map((album: any, index: number) => ({
+          id: album.id,
+          park: `Park ${album.id}`,
+          status: index % 3 === 0 ? 'open' : index % 3 === 1 ? 'partial' : 'closed',
+          message: album.title.substring(0, 50),
+          image: `https://placehold.co/600x400.png?text=Park+${album.id}`,
+          hint: `park status`,
+        }));
+        setParkStatus(formattedData);
+      } catch (error) {
+        console.error("Error fetching park status:", error);
+      } finally {
+        setLoadingParkStatus(false);
+      }
+    };
+    fetchParkStatus();
+  }, []);
+
+  // Fetch Events API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoadingDisruptions(true);
+      setLoadingEvents(true);
+      try {
+        const eventsResponse = await fetch('http://localhost:3500/jiran-tetangga/v1/events');
+        if (!eventsResponse.ok) throw new Error('Failed to fetch events');
+        
+        // Process Events
+        const eventsData = await eventsResponse.json();
+        console.log('Events API data:', eventsData.data);
+
+        const formattedEvents = eventsData.data.map((event: any) => ({
+          id: event._id,
+          title: event.title,
+          date: new Date(event.eventDate),
+          location: event.location,
+          description: event.description,
+        }));
+        setEvents(formattedEvents);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      } finally {
+        setLoadingEvents(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  // Road Disruption date filer
   const filteredRoadDisruptions = useMemo(() => {
     if (!roadDisruptionDate) return [];
     return roadDisruptions.filter((disruption) =>
@@ -95,6 +213,13 @@ export default function Home() {
     );
   }, [roadDisruptions, roadDisruptionDate]);
 
+  // Events date filter
+  const filteredEvents = useMemo(() => {
+    if (!eventsDate) return [];
+    return localEvents.filter((event) =>
+      isSameDay(event.date, eventsDate)
+    );
+  }, [localEvents, eventsDate]);
 
   const handleViewImage = (src: string, alt: string, hint: string) => {
     setSelectedImageData({ src, alt, hint });
@@ -118,7 +243,7 @@ export default function Home() {
             {selectedImageData && (
               <Image
                 src={selectedImageData.src}
-                alt={selectedImageData.alt}
+                alt="Sample Image"
                 width={800}
                 height={600}
                 className="rounded-md object-cover"
@@ -153,6 +278,7 @@ export default function Home() {
         </Dialog>
 
         <div className="grid gap-6 md:grid-cols-2">
+          {/* Road Disruptions Dashboard */}
           <DashboardCard
             title="Road Disruptions"
             icon={<TrafficCone className="h-6 w-6 text-destructive" />}
@@ -229,6 +355,7 @@ export default function Home() {
             </div>
           </DashboardCard>
 
+          {/* Shops Dashboard */}
           <DashboardCard
             title="Shop Notifications"
             icon={<Store className="h-6 w-6 text-primary" />}
@@ -237,40 +364,59 @@ export default function Home() {
               "All Shop Notifications",
               "Here are all the recent notifications about local shops.",
               <ul className="space-y-4">
-                {shopNotifications.map((item) => (
+                {loadingShopNotifications ? (
+                   <div className="space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                ) : shopNotifications.length > 0 ? (shopNotifications.map((item) => (
                   <li key={item.id} className="flex flex-col rounded-md border p-4" data-speakable="true">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{item.title}</span>
+                      <span className="text-sm">{item.name}</span>
+                      <span className="text-sm">{item.opening.toString()} - {item.closing.toString()}</span>
                         <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
                           {item.status}
                         </Badge>
                     </div>
-                    <span className="text-xs text-muted-foreground">{item.location}</span>
+                    <span className="text-xs text-muted-foreground">{item.description}</span>
                   </li>
-                ))}
+                ))) : (
+                   <p data-speakable="true">No available data.</p>
+                )}
               </ul>
             )}
           >
+            {loadingShopNotifications ? (
+              <div className="space-y-2">
+               <Skeleton className="h-4 w-full" />
+             </div>) : shopNotifications.length > 0 ? (
              <ul className="space-y-4">
               {shopNotifications.slice(0, 3).map((item) => (
                 <li key={item.id} className="flex flex-col" data-speakable="true">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{item.title}</span>
+                    <span className="text-sm font-medium">{item.name}</span>
+                      <span className="text-sm">{item.opening.toString()} to {item.closing.toString()}</span>
                     <div className="flex items-center gap-2">
                       <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
                         {item.status}
                       </Badge>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewImage(item.image, item.title, item.hint)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewImage(item.image, item.name, item.hint)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                  <span className="text-xs text-muted-foreground">{item.location}</span>
+                  <span className="text-xs text-muted-foreground">{item.description}</span>
                 </li>
               ))}
             </ul>
+            ) : (
+              <p data-speakable="true">No recent shop notifications.</p>
+            )}          
           </DashboardCard>
           
+          {/* INCOMPLETE */}
+          {/* Park Status Dashboard */}
           <DashboardCard
             title="Park Status"
             icon={<Trees className="h-6 w-6 text-green-600" />}
@@ -279,7 +425,13 @@ export default function Home() {
               "All Park Statuses",
               "Here are the latest statuses for all local parks.",
               <ul className="space-y-4">
-                {parkStatus.map((item) => (
+                {loadingParkStatus ? (
+                   <div className="space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                ) : parkStatus.length > 0 ? (parkStatus.map((item) => (
                   <li key={item.id} className="rounded-md border p-4" data-speakable="true">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">{item.park}</span>
@@ -289,10 +441,16 @@ export default function Home() {
                     </div>
                     <p className="text-xs text-muted-foreground">{item.message}</p>
                   </li>
-                ))}
+                ))) : (
+                   <p data-speakable="true">No available data.</p>
+                )}
               </ul>
             )}
           >
+            {loadingParkStatus ? (
+               <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+              </div>) : parkStatus.length > 0 ? (
             <ul className="space-y-4">
               {parkStatus.slice(0, 3).map((item) => (
                 <li key={item.id} data-speakable="true">
@@ -310,9 +468,12 @@ export default function Home() {
                    <p className="text-xs text-muted-foreground">{item.message}</p>
                 </li>
               ))}
-            </ul>
+            </ul>) : (
+               <p data-speakable="true">No recent park status updates.</p>
+            )}
           </DashboardCard>
-
+          
+          {/* Local Events Dashboard */}
           <DashboardCard
             title="Local Events"
             icon={<CalendarDays className="h-6 w-6 text-primary" />}
@@ -321,26 +482,36 @@ export default function Home() {
               "All Local Events",
               "Here are all upcoming community events. Click the view icon for more details.",
               <ul className="space-y-4">
-                {localEvents.map((event) => (
+                {loadingEvents ? (
+                   <div className="space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                ) : localEvents.length > 0 ? 
+                (localEvents.map((event: Events) => (
                    <li key={event.id} className="flex items-center justify-between rounded-md border p-4" data-speakable="true">
                     <div>
                       <p className="font-semibold text-sm">{event.title}</p>
-                      <p className="text-xs text-muted-foreground">{event.date} @ {event.time}</p>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">{format(event.date, "PPP")}</span>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleSeeMore(
                       event.title,
                       `Event Details`,
                       <div className="space-y-2" data-speakable="true">
-                        <p className="text-sm"><span className="font-semibold">Date:</span> {event.date}</p>
-                        <p className="text-sm"><span className="font-semibold">Time:</span> {event.time}</p>
-                        <p className="text-sm text-muted-foreground">{event.description}</p>
+                        <p className="text-sm">{event.description}</p>
+                        <p className="text-sm"><span className="font-semibold">Location:</span> {event.location}</p>
+                        <p className="text-sm"><span className="font-semibold">Date:</span> {format(event.date, "PPP")}</p>
                       </div>
                     )}>
                       <Eye className="h-4 w-4" />
                     </Button>
                   </li>
-                ))}
+                ))
+                ) : (<p data-speakable="true">No available data.</p>
+                )}
               </ul>
+
             )}
             headerActions={
               <Button onClick={() => setIsRegistrationOpen(true)}>
@@ -356,46 +527,52 @@ export default function Home() {
                     variant={"outline"}
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
+                      !eventsDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                    {eventsDate ? format(eventsDate, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={date}
-                    onSelect={setDate}
+                    selected={eventsDate}
+                    onSelect={setEventDate}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
-              <ul className="space-y-4">
-                {localEvents.slice(0, 2).map((event) => (
+              {loadingEvents ? (
+                 <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                </div>
+                ) : filteredEvents.length > 0 ? (
+               <ul className="space-y-4">
+                {filteredEvents.slice(0, 2).map((event) => (
                   <li key={event.id} className="flex items-center justify-between" data-speakable="true">
                     <div>
                       <p className="font-semibold text-sm">{event.title}</p>
-                      <p className="text-xs text-muted-foreground">{event.date} @ {event.time}</p>
+                      <p className="text-xs text-muted-foreground">{format(event.date, "PPP")}</p>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleSeeMore(
                       event.title,
                       `Event Details`,
                       <div className="space-y-2" data-speakable="true">
-                        <p className="text-sm"><span className="font-semibold">Date:</span> {event.date}</p>
-                        <p className="text-sm"><span className="font-semibold">Time:</span> {event.time}</p>
-                        <p className="text-sm text-muted-foreground">{event.description}</p>
+                        <p className="text-sm">{event.description}</p>
+                        <p className="text-sm"><span className="font-semibold">Location:</span> {event.location}</p>
+                        <p className="text-sm"><span className="font-semibold">Date:</span> {format(event.date, "PPP")}</p>
                       </div>
                     )}>
                       <Eye className="h-4 w-4" />
                     </Button>
                   </li>
                 ))}
-              </ul>
+              </ul>) : (
+                 <p data-speakable="true">No upcoming events on this date.</p>
+              )}
             </div>
           </DashboardCard>
-
         </div>
       </main>
     </div>
