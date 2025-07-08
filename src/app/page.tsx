@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Image from 'next/image';
 import { format, parse, subDays, isSameDay, formatDistanceToNow } from "date-fns";
-import { Calendar as CalendarIcon, CalendarDays, Eye, PenSquare, Store, Trees, TrafficCone } from "lucide-react";
+import { Calendar as CalendarIcon, CalendarDays, Eye, PenSquare, Store, Trees, TrafficCone, Clock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { DashboardCard } from "@/components/dashboard-card";
@@ -57,11 +57,11 @@ export default function Home() {
 
   type ParkStatus = { 
     id: string; 
-    park: string; 
-    status: string
+    name: string; 
+    description: string
     opening: string;
     closing: string;
-    message: string; 
+    status: string; 
     image: string; 
     hint: string
   };
@@ -83,7 +83,14 @@ export default function Home() {
     const fetchDisruptions = async () => {
       setLoadingDisruptions(true);
       try {
-        const disruptionsResponse = await fetch('http://localhost:3500/jiran-tetangga/v1/disruptions');
+        const disruptionsResponse = await fetch('http://localhost:3500/jiran-tetangga/v1/disruptions', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': 'jxdMegN9KOAZMwMCfIbV'
+          },
+        });        
+        
         if (!disruptionsResponse.ok) throw new Error('Failed to fetch disruptions');
         
         // Process disruptions
@@ -117,7 +124,13 @@ export default function Home() {
     const fetchShopNotifications = async () => {
       setLoadingShopNotifications(true);
       try {
-        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/shops');
+        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/shops', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': 'jxdMegN9KOAZMwMCfIbV'
+          },
+        });
         if (!response.ok) throw new Error('Failed to fetch shops');
 
         // Process shops
@@ -145,24 +158,32 @@ export default function Home() {
     fetchShopNotifications();
   }, []);
 
-  // Fetch Parks API - incomplete
+  // Fetch Parks API
   useEffect(() => {
     const fetchParkStatus = async () => {
       setLoadingParkStatus(true);
       try {
-        // NOTE: This is a placeholder API. Replace with your actual API endpoint.
-        const response = await fetch('https://jsonplaceholder.typicode.com/albums?_limit=5');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        const formattedData: ParkStatus[] = data.map((album: any, index: number) => ({
-          id: album.id,
-          park: `Park ${album.id}`,
-          status: index % 3 === 0 ? 'open' : index % 3 === 1 ? 'partial' : 'closed',
-          message: album.title.substring(0, 50),
-          image: `https://placehold.co/600x400.png?text=Park+${album.id}`,
-          hint: `park status`,
+        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/parks', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': 'jxdMegN9KOAZMwMCfIbV'
+          },
+        });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const parksData = await response.json();
+        const formattedData = parksData.data
+        .map((park: any) => ({
+          id: park._id,
+          name: park.name,
+          description: park.description,
+          opening: format(parse(park.openingHours.opening, 'HHmm', new Date()), 'hh:mm a'),
+          closing: format(parse(park.openingHours.closing, 'HHmm', new Date()), 'hh:mm a'),
+          status: park.status,
+          image: `https://placehold.co/600x400.png?text=${park.name.replace(/\s+/g, '+')}`,
+          hint: 'park',
         }));
         setParkStatus(formattedData);
       } catch (error) {
@@ -180,7 +201,14 @@ export default function Home() {
       setLoadingDisruptions(true);
       setLoadingEvents(true);
       try {
-        const eventsResponse = await fetch('http://localhost:3500/jiran-tetangga/v1/events');
+        const eventsResponse = await fetch('http://localhost:3500/jiran-tetangga/v1/events', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': 'jxdMegN9KOAZMwMCfIbV'
+          },
+        });
+
         if (!eventsResponse.ok) throw new Error('Failed to fetch events');
         
         // Process Events
@@ -230,7 +258,7 @@ export default function Home() {
     setDetailsContent({ title, description, content });
     setDetailsOpen(true);
   };
-  
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <AppHeader />
@@ -396,7 +424,7 @@ export default function Home() {
                 <li key={item.id} className="flex flex-col" data-speakable="true">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{item.name}</span>
-                      <span className="text-sm">{item.opening.toString()} to {item.closing.toString()}</span>
+                    <span className="text-sm">{item.opening.toString()} to {item.closing.toString()}</span>
                     <div className="flex items-center gap-2">
                       <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
                         {item.status}
@@ -415,7 +443,6 @@ export default function Home() {
             )}          
           </DashboardCard>
           
-          {/* INCOMPLETE */}
           {/* Park Status Dashboard */}
           <DashboardCard
             title="Park Status"
@@ -431,15 +458,38 @@ export default function Home() {
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                   </div>
-                ) : parkStatus.length > 0 ? (parkStatus.map((item) => (
-                  <li key={item.id} className="rounded-md border p-4" data-speakable="true">
+                ) : parkStatus.length > 0 ? (parkStatus.map((park) => (
+                  <li key={park.id} className="rounded-md border p-4" data-speakable="true">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{item.park}</span>
-                      <Badge variant={item.status === 'open' ? 'default' : 'secondary'} className={item.status === 'open' ? 'bg-green-600' : ''}>
-                        {item.status}
-                      </Badge>
+                      <span className="text-sm font-medium">{park.name}</span>
+                       <Badge
+                          variant={
+                            park.status === 'open'
+                              ? 'default'
+                              : park.status === 'maintenance'
+                              ? 'secondary'
+                              : 'outline' // For 'closed' or others
+                          }
+                          className={
+                            park.status === 'open'
+                              ? 'bg-green-600'
+                              : park.status === 'maintenance'
+                              ? 'bg-yellow-500'
+                              : 'bg-red-600'
+                          }
+                        >
+                          {park.status}
+                        </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground">{item.message}</p>
+                    <div>
+                      <p className="text-sm">{park.description}</p>
+                      <span className="mt-2 flex items-center gap-2 text-sm">
+                        <Clock className="w-4 text-muted-foreground" />
+                        {park.opening === '12:00 AM' && park.closing === '12:00 AM'
+                        ? '24 Hours'
+                        : `${park.opening} to ${park.closing}`}
+                      </span>
+                    </div>
                   </li>
                 ))) : (
                    <p data-speakable="true">No available data.</p>
@@ -448,24 +498,46 @@ export default function Home() {
             )}
           >
             {loadingParkStatus ? (
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <Skeleton className="h-4 w-full" />
               </div>) : parkStatus.length > 0 ? (
             <ul className="space-y-4">
-              {parkStatus.slice(0, 3).map((item) => (
-                <li key={item.id} data-speakable="true">
+              {parkStatus.slice(0, 3).map((park) => (
+                <li key={park.id} data-speakable="true">
                    <div className="flex items-center justify-between">
-                     <span className="text-sm font-medium">{item.park}</span>
-                     <div className="flex items-center gap-2">
-                      <Badge variant={item.status === 'open' ? 'default' : 'secondary'} className={item.status === 'open' ? 'bg-green-600' : ''}>
-                          {item.status}
+                     <span className="text-sm font-medium">{park.name}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            park.status === 'open'
+                              ? 'default'
+                              : park.status === 'maintenance'
+                              ? 'secondary'
+                              : 'outline'
+                          }
+                          className={
+                            park.status === 'open'
+                              ? 'bg-green-600'
+                              : park.status === 'maintenance'
+                              ? 'bg-yellow-500'
+                              : 'bg-red-600'
+                          }
+                        >
+                          {park.status}
                         </Badge>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewImage(item.image, item.park, item.hint)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewImage(park.image, park.name, park.hint)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                     </div>
+                      </div>
                    </div>
-                   <p className="text-xs text-muted-foreground">{item.message}</p>
+                    <div>
+                      <span className="mt-1 flex items-center gap-2 text-sm">
+                        <Clock className="w-4 text-muted-foreground" />
+                        {park.opening === '12:00 AM' && park.closing === '12:00 AM'
+                        ? '24 Hours'
+                        : `${park.opening} to ${park.closing}`}
+                      </span>
+                    </div>
                 </li>
               ))}
             </ul>) : (
