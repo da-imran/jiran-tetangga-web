@@ -12,7 +12,7 @@ services:
     image: nginx:stable-perl
     container_name: frontend-nginx
     ports:
-    - "80:80"
+    - "81:81"
     volumes:
     - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
