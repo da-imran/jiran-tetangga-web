@@ -27,4 +27,4 @@ jobs:
         npm test || echo "No tests defined yet. Skipping."
     
     - name: Done
-      run: echo "CI pipeline completed for push to main branch"
+      run: echo "CI pipeline completed for push to branch"
