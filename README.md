@@ -139,7 +139,7 @@ jiran-tetangga-system/
 [x] Reversible password encryption </br>
 [x] Modular Express routing </br>
 [x] NextJS frontend dashboard </br>
-[x] Dcoker support </br>
+[x] Docker support </br>
 [] WhatsApp bot notification </br>
 [] CI/CD pipeline with Github Actions </br>
 [] Kubernetes orchestration </br>
