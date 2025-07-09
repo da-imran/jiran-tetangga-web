@@ -12,6 +12,7 @@ A full-stack project designed to help residents of a dense neighbourhood in **Su
 - 📬 Residents can report damages or concerns
 - 🧠 Admin system for managing updates
 - 🤖 WhatsApp bot integration
+- 🐳 Docker support + local and cloud deployment ready
 
 ---
 
