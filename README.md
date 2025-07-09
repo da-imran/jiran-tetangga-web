@@ -128,10 +128,10 @@ jiran-tetangga-system/
 4.  **Run with Docker:** Run `docker compose up --build -d` in the project root.
 
 ## 📦 Docker Support 
-1.  **Docker support has been built into the project.
-2.  **Contains `Dockerfile` and `docker-compose.yaml` for the Docker configurations
-3.  **Can easily run command in CLI to start up the project
-4.  ##Requirement: Docker
+1.  Docker support has been built into the project
+2.  Contains `Dockerfile` and `docker-compose.yaml` for the Docker configurations
+3.  Can easily run command in CLI to start up the project
+4.  ##Requirement:** Docker
 
 ## 📌 Roadmap 
 [x] Admin user creation API </br>
