@@ -1,6 +1,6 @@
 # 🏡 JiranTetangga
 
-A full-stack project designed to help residents of a dense neighbourhood in **Sungai Tiram, Penang** stay informed about local updates, report issues, and stay connected through a WhatsApp-integrated system. This repository is the frontend part of the whole project and it is built fully in Firebase Studio!
+A full-stack project designed to help residents of a dense neighbourhood in **Sungai Tiram, Penang** stay informed about local updates, report issues, and stay connected through a WhatsApp-integrated system. This repository is the frontend part of the whole project and it is built with Firebase Studio!
 
 ## 🚀 Features
 
@@ -10,9 +10,8 @@ A full-stack project designed to help residents of a dense neighbourhood in **Su
   - Shop openings and closures
   - Park conditions
 - 📬 Residents can report damages or concerns
-- 🧠 Admin system for managing updates and users
+- 🧠 Admin system for managing updates
 - 🤖 WhatsApp bot integration
-- 🐳 Docker support + local and cloud deployment ready
 
 ---
 
@@ -125,10 +124,13 @@ jiran-tetangga-system/
 1.  **Explore the code:** Begin by examining `/src/app/page.tsx` to understand the basic page structure.
 2.  **Install dependencies:** Run `npm install` or `yarn install` in the project root.
 3.  **Run locally:** Start the development server with `npm run dev` or `yarn dev`.
-4.  **Deploy to Firebase:** Use the Firebase CLI to deploy your project. Refer to the Firebase documentation for detailed deployment instructions.
+4.  **Run with Docker:** Run `docker compose up --build -d` in the project root.
 
 ## 📦 Docker Support 
-(Coming soon in Phase 3)
+1.  **Docker support has been built into the project.
+2.  **Contains `Dockerfile` and `docker-compose.yaml` for the Docker configurations
+3.  **Can easily run command in CLI to start up the project
+4.  ##Requirement: Docker
 
 ## 📌 Roadmap 
 [x] Admin user creation API </br>
@@ -136,6 +138,7 @@ jiran-tetangga-system/
 [x] Reversible password encryption </br>
 [x] Modular Express routing </br>
 [x] NextJS frontend dashboard </br>
+[x] Dcoker support </br>
 [] WhatsApp bot notification </br>
 [] CI/CD pipeline with Github Actions </br>
 [] Kubernetes orchestration </br>
