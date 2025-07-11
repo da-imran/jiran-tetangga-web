@@ -50,8 +50,8 @@ import { cn } from "@/lib/utils";
 
 // Schemas for form validation
 const roadDisruptionSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters long."),
-  description: z.string().min(10, "Description must be at least 10 characters long."),
+  title: z.string().min(5, "Title is required."),
+  description: z.string().min(10, "Description is required."),
   category: z.string().min(1, "Please select a category."),
 });
 
