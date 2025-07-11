@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AppHeader } from "@/components/header";
 import {
   Table,
@@ -37,48 +37,8 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { formatDistanceToNow, subDays, subHours } from "date-fns";
-
-
-const roadDisruptions = [
-  { id: 1, title: "Jalan Cenderai Water Pipe Burst", date: subHours(new Date(), 2) },
-  { id: 2, title: "Accident near Taman Rinting exit", date: subHours(new Date(), 5) },
-  { id: 3, title: "Roadworks on Jalan Merbuk until 5 PM", date: subHours(new Date(), 8) },
-  { id: 4, title: "Fallen tree on Jalan Delima", date: subDays(new Date(), 1) },
-  { id: 5, title: "Pothole repair on Jalan Seri Austin", date: subDays(new Date(), 2) },
-  { id: 6, title: "Traffic light out at Jalan Perjiranan", date: subDays(new Date(), 3) },
-];
-
-const localEvents = [
-  { id: 1, title: "Community Gotong-Royong", date: "28 July 2024", time: "8:00 AM" },
-  { id: 2, title: "Weekly Pasar Malam", date: "Every Friday", time: "5:00 PM - 10:00 PM" },
-  { id: 3, title: "Sungai Tiram Fun Run", date: "15 August 2024", time: "7:00 AM" },
-  { id: 4, title: "National Day Celebration", date: "31 August 2024", time: "9:00 AM" },
-  { id: 5, title: "Gardening Workshop", date: "5 September 2024", time: "10:00 AM" },
-];
-
-const eventProposals = [
-  { id: 1, eventName: "Charity Flea Market", eventDate: new Date("2024-08-25"), description: "A flea market to raise funds for the local animal shelter.", organizerName: "Jane Doe", organizerEmail: "jane.d@example.com" },
-  { id: 2, eventName: "Neighborhood Movie Night", eventDate: new Date("2024-09-05"), description: "Outdoor screening of a family-friendly movie at the community park.", organizerName: "John Smith", organizerEmail: "john.s@example.com" },
-  { id: 3, eventName: "Zumba Fitness Class", eventDate: new Date("2024-09-12"), description: "Weekly zumba class for all residents.", organizerName: "Alicia Keys", organizerEmail: "alicia.k@example.com" },
-  { id: 4, eventName: "Baking Competition", eventDate: new Date("2024-10-20"), description: "A friendly baking competition for all ages.", organizerName: "Gordon Ramsay", organizerEmail: "gordon.r@example.com" },
-];
-
-const shopNotifications = [
-  { id: 1, title: "New Bakery 'Roti Sedap' now open!", location: "Lot 23, Jalan Nuri", status: "new" },
-  { id: 2, title: "Kedai Runcit Ah Meng has closed", location: "No. 12, Jalan Merpati", status: "closed" },
-  { id: 3, title: "Grand Opening: Bubble Tea Shop", location: "Near 7-Eleven", status: "new" },
-  { id: 4, title: "Hardware store 20% discount", location: "Jalan Delima 5", status: "promo" },
-  { id: 5, title: "Clinic opening soon", location: "Taman Daya", status: "new" },
-];
-
-const parkStatus = [
-  { id: 1, park: "Taman Permainan Utama", status: "open", message: "Playground swings repaired." },
-  { id: 2, park: "Taman Rekreasi Sungai Tiram", status: "partial", message: "Jogging track closed for maintenance." },
-  { id: 3, park: "Laman Komuniti", status: "open", message: "All facilities are operational." },
-  { id: 4, park: "Park Connector", status: "closed", message: "Upgrade works in progress." },
-  { id: 5, park: "Dog Park", status: "open", message: "New water fountain installed." },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import { format, formatDistanceToNow, parse } from "date-fns";
 
 const ITEMS_PER_PAGE = 3;
 type SortDirection = "ascending" | "descending";
@@ -92,6 +52,20 @@ export default function AdminDashboardPage() {
   const [isReviewingProposals, setIsReviewingProposals] = useState(false);
   const [proposalToReject, setProposalToReject] = useState<any | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+
+  const [roadDisruptions, setRoadDisruptions] = useState<any[]>([]);
+  const [localEvents, setLocalEvents] = useState<any[]>([]);
+  const [eventProposals, setEventProposals] = useState<any[]>([]);
+  const [shopNotifications, setShopNotifications] = useState<any[]>([]);
+  const [parkStatus, setParkStatus] = useState<any[]>([]);
+
+  const [loading, setLoading] = useState({
+    roadDisruptions: true,
+    shopNotifications: true,
+    parkStatus: true,
+    localEvents: true,
+    eventProposals: true,
+  });
 
   const [search, setSearch] = useState({
     roadDisruptions: "",
@@ -111,8 +85,8 @@ export default function AdminDashboardPage() {
 
   const [sortConfig, setSortConfig] = useState<{ [key: string]: SortConfig }>({
     roadDisruptions: { key: 'date', direction: 'descending' },
-    shopNotifications: { key: 'title', direction: 'ascending' },
-    parkStatus: { key: 'park', direction: 'ascending' },
+    shopNotifications: { key: 'name', direction: 'ascending' },
+    parkStatus: { key: 'name', direction: 'ascending' },
     localEvents: { key: 'title', direction: 'ascending' },
     eventProposals: { key: 'eventName', direction: 'ascending' },
   });
@@ -121,6 +95,48 @@ export default function AdminDashboardPage() {
     shopNotifications: [],
     parkStatus: [],
   });
+
+   // Fetch APIs
+  useEffect(() => {
+    const fetchData = async (endpoint: string, setter: (data: any[]) => void, loaderKey: keyof typeof loading) => {
+      setLoading(prev => ({...prev, [loaderKey]: true}));
+      try {
+        const response = await fetch(`http://localhost:3500/jiran-tetangga/v1/${endpoint}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': 'jxdMegN9KOAZMwMCfIbV'
+            },
+        });
+        if (!response.ok) throw new Error(`Failed to fetch ${endpoint}`);
+        const result = await response.json();
+        
+        // Data Transformation
+        if(loaderKey === 'roadDisruptions') {
+            setter(result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) })));
+        } else if (loaderKey === 'localEvents') {
+             setter(result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) })));
+        } else if (loaderKey === 'eventProposals') {
+            setter(result.data.map((item: any) => ({ ...item, eventDate: new Date(item.eventDate)})))
+        } 
+        else {
+            setter(result.data);
+        }
+
+      } catch (error) {
+        console.error(`Error fetching ${endpoint}:`, error);
+        setter([]);
+      } finally {
+        setLoading(prev => ({...prev, [loaderKey]: false}));
+      }
+    };
+    
+    fetchData('disruptions', setRoadDisruptions, 'roadDisruptions');
+    fetchData('shops', setShopNotifications, 'shopNotifications');
+    fetchData('parks', setParkStatus, 'parkStatus');
+    fetchData('events', setLocalEvents, 'localEvents');
+    fetchData('events/proposals', setEventProposals, 'eventProposals'); // Assuming this endpoint exists
+  }, []);
   
   const handleSort = (table: keyof typeof sortConfig, key: string) => {
     setSortConfig(prev => {
@@ -179,6 +195,15 @@ export default function AdminDashboardPage() {
     return sortConfig[table].direction === 'ascending' ? '▲' : '▼';
   };
 
+  const renderSkeleton = (columns: number) =>
+    Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+      <TableRow key={i}>
+        <TableCell colSpan={columns}>
+          <Skeleton className="h-8 w-full" />
+        </TableCell>
+      </TableRow>
+  ));
+    
   const filteredRoadDisruptions = useMemo(() => {
     let items = roadDisruptions.filter(item =>
       item.title.toLowerCase().includes(search.roadDisruptions.toLowerCase())
@@ -194,7 +219,7 @@ export default function AdminDashboardPage() {
     });
 
     return items;
-  }, [search.roadDisruptions, sortConfig.roadDisruptions]);
+  }, [search.roadDisruptions, sortConfig.roadDisruptions, roadDisruptions]);
   const paginatedRoadDisruptions = useMemo(() => {
     const startIndex = (currentPage.roadDisruptions - 1) * ITEMS_PER_PAGE;
     return filteredRoadDisruptions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -209,8 +234,8 @@ export default function AdminDashboardPage() {
     }
 
     items = items.filter(item =>
-      item.title.toLowerCase().includes(search.shopNotifications.toLowerCase()) ||
-      item.location.toLowerCase().includes(search.shopNotifications.toLowerCase())
+      item.name.toLowerCase().includes(search.shopNotifications.toLowerCase()) ||
+      item.description.toLowerCase().includes(search.shopNotifications.toLowerCase())
     );
 
     const { key, direction } = sortConfig.shopNotifications;
@@ -223,7 +248,7 @@ export default function AdminDashboardPage() {
     });
 
     return items;
-  }, [search.shopNotifications, sortConfig.shopNotifications, filters.shopNotifications]);
+  }, [search.shopNotifications, sortConfig.shopNotifications, filters.shopNotifications, shopNotifications]);
   const paginatedShopNotifications = useMemo(() => {
     const startIndex = (currentPage.shopNotifications - 1) * ITEMS_PER_PAGE;
     return filteredShopNotifications.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -238,8 +263,8 @@ export default function AdminDashboardPage() {
     }
 
     items = items.filter(item =>
-      item.park.toLowerCase().includes(search.parkStatus.toLowerCase()) ||
-      item.message.toLowerCase().includes(search.parkStatus.toLowerCase())
+      item.name.toLowerCase().includes(search.parkStatus.toLowerCase()) ||
+      item.description.toLowerCase().includes(search.parkStatus.toLowerCase())
     );
     
     const { key, direction } = sortConfig.parkStatus;
@@ -250,7 +275,7 @@ export default function AdminDashboardPage() {
     });
 
     return items;
-  }, [search.parkStatus, sortConfig.parkStatus, filters.parkStatus]);
+  }, [search.parkStatus, sortConfig.parkStatus, filters.parkStatus, parkStatus]);
   const paginatedParkStatus = useMemo(() => {
     const startIndex = (currentPage.parkStatus - 1) * ITEMS_PER_PAGE;
     return filteredParkStatus.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -259,20 +284,21 @@ export default function AdminDashboardPage() {
 
   const filteredLocalEvents = useMemo(() => {
     let items = localEvents.filter(item =>
-      item.title.toLowerCase().includes(search.localEvents.toLowerCase()) ||
-      item.date.toLowerCase().includes(search.localEvents.toLowerCase()) ||
-      item.time.toLowerCase().includes(search.localEvents.toLowerCase())
+      item.title.toLowerCase().includes(search.localEvents.toLowerCase())
     );
 
     const { key, direction } = sortConfig.localEvents;
     items.sort((a, b) => {
-      const aValue = a[key as keyof typeof a] as string;
-      const bValue = b[key as keyof typeof b] as string;
-      return direction === 'ascending' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      const aValue = a[key as keyof typeof a] as any;
+      const bValue = b[key as keyof typeof b] as any;
+      if (key === 'date') {
+        return direction === 'ascending' ? aValue - bValue : bValue - aValue;
+      }
+      return direction === 'ascending' ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue));
     });
 
     return items;
-  }, [search.localEvents, sortConfig.localEvents]);
+  }, [search.localEvents, sortConfig.localEvents, localEvents]);
   const paginatedLocalEvents = useMemo(() => {
     const startIndex = (currentPage.localEvents - 1) * ITEMS_PER_PAGE;
     return filteredLocalEvents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -296,7 +322,7 @@ export default function AdminDashboardPage() {
     });
 
     return items;
-  }, [search.eventProposals, sortConfig.eventProposals]);
+  }, [search.eventProposals, sortConfig.eventProposals, eventProposals]);
   const paginatedEventProposals = useMemo(() => {
     const startIndex = (currentPage.eventProposals - 1) * ITEMS_PER_PAGE;
     return filteredEventProposals.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -351,8 +377,9 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedRoadDisruptions.length > 0 ? paginatedRoadDisruptions.map((item) => (
-                    <TableRow key={item.id}>
+                  {loading.roadDisruptions ? renderSkeleton(3) :
+                  paginatedRoadDisruptions.length > 0 ? paginatedRoadDisruptions.map((item) => (
+                    <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
                       <TableCell data-speakable="true">{formatDistanceToNow(item.date, { addSuffix: true })}</TableCell>
                       <TableCell className="text-right">
@@ -444,15 +471,15 @@ export default function AdminDashboardPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>
-                       <Button variant="ghost" onClick={() => handleSort('shopNotifications', 'title')} data-speakable="true">
-                         Title
-                         <SortArrow table="shopNotifications" columnKey="title" />
+                       <Button variant="ghost" onClick={() => handleSort('shopNotifications', 'name')} data-speakable="true">
+                         Name
+                         <SortArrow table="shopNotifications" columnKey="name" />
                        </Button>
                     </TableHead>
                     <TableHead>
-                       <Button variant="ghost" onClick={() => handleSort('shopNotifications', 'location')} data-speakable="true">
-                         Location
-                         <SortArrow table="shopNotifications" columnKey="location" />
+                       <Button variant="ghost" onClick={() => handleSort('shopNotifications', 'description')} data-speakable="true">
+                         Description
+                         <SortArrow table="shopNotifications" columnKey="description" />
                        </Button>
                     </TableHead>
                     <TableHead>
@@ -465,10 +492,11 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                   {paginatedShopNotifications.length > 0 ? paginatedShopNotifications.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
-                      <TableCell data-speakable="true">{item.location}</TableCell>
+                   {loading.shopNotifications ? renderSkeleton(4) : 
+                   paginatedShopNotifications.length > 0 ? paginatedShopNotifications.map((item) => (
+                    <TableRow key={item._id}>
+                      <TableCell className="font-medium" data-speakable="true">{item.name}</TableCell>
+                      <TableCell data-speakable="true">{item.description}</TableCell>
                       <TableCell>
                         <Badge data-speakable="true" variant={item.status === 'new' ? 'default' : item.status === 'promo' ? 'secondary' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : item.status === 'promo' ? 'bg-blue-500 text-white' : ''}>
                           {item.status}
@@ -536,7 +564,7 @@ export default function AdminDashboardPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {['open', 'closed', 'partial'].map((status) => (
+                    {['open', 'closed', 'maintenance'].map((status) => (
                       <DropdownMenuCheckboxItem
                         key={status}
                         className="capitalize"
@@ -561,15 +589,15 @@ export default function AdminDashboardPage() {
                 <TableHeader>
                   <TableRow>
                      <TableHead>
-                       <Button variant="ghost" onClick={() => handleSort('parkStatus', 'park')} data-speakable="true">
+                       <Button variant="ghost" onClick={() => handleSort('parkStatus', 'name')} data-speakable="true">
                          Park
-                         <SortArrow table="parkStatus" columnKey="park" />
+                         <SortArrow table="parkStatus" columnKey="name" />
                        </Button>
                     </TableHead>
                     <TableHead>
-                       <Button variant="ghost" onClick={() => handleSort('parkStatus', 'message')} data-speakable="true">
+                       <Button variant="ghost" onClick={() => handleSort('parkStatus', 'description')} data-speakable="true">
                          Message
-                         <SortArrow table="parkStatus" columnKey="message" />
+                         <SortArrow table="parkStatus" columnKey="description" />
                        </Button>
                     </TableHead>
                     <TableHead>
@@ -582,12 +610,13 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedParkStatus.length > 0 ? paginatedParkStatus.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium" data-speakable="true">{item.park}</TableCell>
-                      <TableCell data-speakable="true">{item.message}</TableCell>
+                  {loading.parkStatus ? renderSkeleton(4) : 
+                  paginatedParkStatus.length > 0 ? paginatedParkStatus.map((item) => (
+                    <TableRow key={item._id}>
+                      <TableCell className="font-medium" data-speakable="true">{item.name}</TableCell>
+                      <TableCell data-speakable="true">{item.description}</TableCell>
                       <TableCell>
-                        <Badge data-speakable="true" variant={item.status === 'open' ? 'default' : item.status === 'partial' ? 'secondary' : 'destructive'} className={item.status === 'open' ? 'bg-green-600' : item.status === 'partial' ? 'bg-yellow-500' : ''}>
+                        <Badge data-speakable="true" variant={item.status === 'open' ? 'default' : item.status === 'maintenance' ? 'secondary' : 'destructive'} className={item.status === 'open' ? 'bg-green-600' : item.status === 'maintenance' ? 'bg-yellow-500' : ''}>
                           {item.status}
                         </Badge>
                       </TableCell>
@@ -677,20 +706,21 @@ export default function AdminDashboardPage() {
                        </Button>
                     </TableHead>
                     <TableHead>
-                       <Button variant="ghost" onClick={() => handleSort('localEvents', 'time')} data-speakable="true">
-                         Time
-                         <SortArrow table="localEvents" columnKey="time" />
+                       <Button variant="ghost" onClick={() => handleSort('localEvents', 'location')} data-speakable="true">
+                         Location
+                         <SortArrow table="localEvents" columnKey="location" />
                        </Button>
                     </TableHead>
                     <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedLocalEvents.length > 0 ? paginatedLocalEvents.map((item) => (
-                    <TableRow key={item.id}>
+                  {loading.localEvents ? renderSkeleton(4) :
+                  paginatedLocalEvents.length > 0 ? paginatedLocalEvents.map((item) => (
+                    <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
-                      <TableCell data-speakable="true">{item.date}</TableCell>
-                      <TableCell data-speakable="true">{item.time}</TableCell>
+                      <TableCell data-speakable="true">{format(item.date, 'PPP')}</TableCell>
+                      <TableCell data-speakable="true">{item.location}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Local Event', item)}>
                           <Pencil className="h-4 w-4" />
@@ -796,14 +826,18 @@ export default function AdminDashboardPage() {
                 className="w-full mb-4"
               />
             <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
-              {paginatedEventProposals.length > 0 ? paginatedEventProposals.map((proposal) => (
+              {loading.eventProposals ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                    <Card key={i}><CardContent className="p-4"><Skeleton className="h-24 w-full" /></CardContent></Card>
+                ))
+               ) : paginatedEventProposals.length > 0 ? paginatedEventProposals.map((proposal) => (
                 <Card key={proposal.id}>
                   <CardHeader>
                     <CardTitle data-speakable="true">{proposal.eventName}</CardTitle>
                     <CardDescription data-speakable="true">Proposed by: {proposal.organizerName} ({proposal.organizerEmail})</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
-                    <p data-speakable="true"><span className="font-semibold">Proposed Date:</span> {proposal.eventDate.toLocaleDateString()}</p>
+                    <p data-speakable="true"><span className="font-semibold">Proposed Date:</span> {format(proposal.eventDate, "PPP")}</p>
                     <p className="text-muted-foreground" data-speakable="true">{proposal.description}</p>
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2">
@@ -872,3 +906,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
