@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -46,6 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 // Schemas for form validation
 const roadDisruptionSchema = z.object({
@@ -168,14 +170,9 @@ export default function AdminDashboardPage() {
   const fetchData = async (endpoint: string, setData: Function, setLoadingState: Function, dataKey: string) => {
     setLoadingState((prev: any) => ({ ...prev, [dataKey]: true }));
     try {
-        const response = await fetch(`http://localhost:3500/jiran-tetangga/v1/${endpoint}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
-        });
-        if (!response.ok) throw new Error(`Failed to fetch ${dataKey}`);
-        const result = await response.json();
-        
+        const result = await api.get(`/${endpoint}`);
         let processedData = result.data;
+
         if (dataKey === 'roadDisruptions') {
             processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
         } else if (dataKey === 'localEvents') {
@@ -187,6 +184,11 @@ export default function AdminDashboardPage() {
         setData(processedData);
     } catch (error) {
         console.error(`Error fetching ${dataKey}:`, error);
+        toast({
+          variant: "destructive",
+          title: `Failed to fetch ${dataKey}`,
+          description: "Please check the API connection and try again.",
+        })
         setData([]);
     } finally {
         setLoadingState((prev: any) => ({ ...prev, [dataKey]: false }));
@@ -217,7 +219,6 @@ export default function AdminDashboardPage() {
     setIsSubmitting(true);
     const { type, itemType, data } = action;
     const isEdit = type === 'edit';
-    const method = isEdit ? 'PUT' : 'POST';
     
     const endpointMap: { [key: string]: string } = {
         'Road Disruption': 'disruptions',
@@ -226,19 +227,11 @@ export default function AdminDashboardPage() {
         'Local Event': 'events',
     };
     const endpoint = endpointMap[itemType];
-    const url = isEdit ? `http://localhost:3500/jiran-tetangga/v1/${endpoint}/${data._id}` : `http://localhost:3500/jiran-tetangga/v1/${endpoint}`;
+    const url = isEdit ? `/${endpoint}/${data._id}` : `/${endpoint}`;
+    const method = isEdit ? 'put' : 'post';
     
     try {
-        const response = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
-            body: JSON.stringify(values),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Failed to ${type} ${itemType}`);
-        }
+        const response = await api[method](url, values);
 
         toast({
             title: "Success!",

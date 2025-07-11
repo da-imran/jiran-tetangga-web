@@ -1,9 +1,10 @@
 
 "use client";
 
+import { useState, useEffect } from 'react';
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, LogIn, Wrench, LogOut } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Home, LogIn, Wrench, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,11 +27,32 @@ import {
 } from "@/components/ui/alert-dialog";
 import { IssueReportForm } from "./issue-report-form";
 import { Badge } from "./ui/badge";
-
+import { useToast } from '@/hooks/use-toast';
 
 export function AppHeader() {
   const pathname = usePathname();
-  const isAdminPage = pathname.startsWith('/admin');
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [isAdminPage, setIsAdminPage] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    setIsAdminLoggedIn(!!token);
+    setIsAdminPage(pathname.startsWith('/admin'));
+  }, [pathname]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('adminUser');
+    setIsAdminLoggedIn(false);
+    toast({
+      title: 'Logged Out',
+      description: 'You have been successfully logged out.',
+    });
+    router.push('/');
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
@@ -40,14 +62,23 @@ export function AppHeader() {
           <span className="text-lg font-headline">JiranTetangga</span>
         </Link>
         <div className="flex items-center gap-4">
-          {isAdminPage ? (
+          {isAdminLoggedIn ? (
             <>
-              <Button variant="ghost" asChild>
-                <Link href="/">
-                  <Home className="mr-2 h-4 w-4" />
-                  Dashboard
-                </Link>
-              </Button>
+              {isAdminPage ? (
+                 <Button variant="ghost" asChild>
+                    <Link href="/">
+                      <Home className="mr-2 h-4 w-4" />
+                      View Dashboard
+                    </Link>
+                  </Button>
+              ) : (
+                <Button variant="ghost" asChild>
+                  <Link href="/admin">
+                    <User className="mr-2 h-4 w-4" />
+                    Admin Panel
+                  </Link>
+                </Button>
+              )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline">
@@ -64,7 +95,7 @@ export function AppHeader() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction>Logout</AlertDialogAction>
+                    <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -90,7 +121,7 @@ export function AppHeader() {
                 </DialogContent>
               </Dialog>
               <Button asChild>
-                <Link href="/admin">
+                <Link href="/login">
                   <LogIn className="mr-2 h-4 w-4" />
                   Admin Login
                 </Link>

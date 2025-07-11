@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { EventRegistrationForm } from "@/components/event-registration-form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
 
 export default function Home() {
   const [selectedImageData, setSelectedImageData] = useState<{ src: string; alt: string; hint: string } | null>(null);
@@ -83,18 +84,7 @@ export default function Home() {
     const fetchDisruptions = async () => {
       setLoadingDisruptions(true);
       try {
-        const disruptionsResponse = await fetch('http://localhost:3500/jiran-tetangga/v1/disruptions', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': 'jxdMegN9KOAZMwMCfIbV'
-          },
-        });        
-        
-        if (!disruptionsResponse.ok) throw new Error('Failed to fetch disruptions');
-        
-        // Process disruptions
-        const disruptionsData = await disruptionsResponse.json();
+        const disruptionsData = await api.get('/disruptions');
         console.log('Disruptions API data:', disruptionsData.data);
 
         const formattedDisruptions = disruptionsData.data
@@ -124,17 +114,7 @@ export default function Home() {
     const fetchShopNotifications = async () => {
       setLoadingShopNotifications(true);
       try {
-        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/shops', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': 'jxdMegN9KOAZMwMCfIbV'
-          },
-        });
-        if (!response.ok) throw new Error('Failed to fetch shops');
-
-        // Process shops
-        const shopsData = await response.json();
+        const shopsData = await api.get('/shops');
         console.log('Shops API data:', shopsData.data);
 
         const formattedShops = shopsData.data
@@ -163,17 +143,7 @@ export default function Home() {
     const fetchParkStatus = async () => {
       setLoadingParkStatus(true);
       try {
-        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/parks', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': 'jxdMegN9KOAZMwMCfIbV'
-          },
-        });
-
-        if (!response.ok) throw new Error('Network response was not ok');
-        
-        const parksData = await response.json();
+        const parksData = await api.get('/parks');
         const formattedData = parksData.data
         .map((park: any) => ({
           id: park._id,
@@ -201,18 +171,7 @@ export default function Home() {
       setLoadingDisruptions(true);
       setLoadingEvents(true);
       try {
-        const eventsResponse = await fetch('http://localhost:3500/jiran-tetangga/v1/events', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': 'jxdMegN9KOAZMwMCfIbV'
-          },
-        });
-
-        if (!eventsResponse.ok) throw new Error('Failed to fetch events');
-        
-        // Process Events
-        const eventsData = await eventsResponse.json();
+        const eventsData = await api.get('/events');
         console.log('Events API data:', eventsData.data);
 
         const formattedEvents = eventsData.data.map((event: any) => ({
@@ -650,5 +609,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
