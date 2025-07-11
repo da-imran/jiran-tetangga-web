@@ -96,48 +96,119 @@ export default function AdminDashboardPage() {
     parkStatus: [],
   });
 
-   // Fetch APIs
+  // Fetch Disruptions API
   useEffect(() => {
-    const fetchData = async (endpoint: string, setter: (data: any[]) => void, loaderKey: keyof typeof loading) => {
-      setLoading(prev => ({...prev, [loaderKey]: true}));
+    const fetchDisruptions = async () => {
+      setLoading(prev => ({ ...prev, roadDisruptions: true }));
       try {
-        const response = await fetch(`http://localhost:3500/jiran-tetangga/v1/${endpoint}`, {
+        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/disruptions', {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': 'jxdMegN9KOAZMwMCfIbV'
-            },
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
         });
-        if (!response.ok) throw new Error(`Failed to fetch ${endpoint}`);
+        if (!response.ok) throw new Error('Failed to fetch disruptions');
         const result = await response.json();
-        
-        // Data Transformation
-        if(loaderKey === 'roadDisruptions') {
-            setter(result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) })));
-        } else if (loaderKey === 'localEvents') {
-             setter(result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) })));
-        } else if (loaderKey === 'eventProposals') {
-            setter(result.data.map((item: any) => ({ ...item, eventDate: new Date(item.eventDate)})))
-        } 
-        else {
-            setter(result.data);
-        }
-
+        setRoadDisruptions(result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) })));
       } catch (error) {
-        console.error(`Error fetching ${endpoint}:`, error);
-        setter([]);
+        console.error(`Error fetching disruptions:`, error);
+        setRoadDisruptions([]);
       } finally {
-        setLoading(prev => ({...prev, [loaderKey]: false}));
+        setLoading(prev => ({...prev, roadDisruptions: false}));
       }
     };
-    
-    fetchData('disruptions', setRoadDisruptions, 'roadDisruptions');
-    fetchData('shops', setShopNotifications, 'shopNotifications');
-    fetchData('parks', setParkStatus, 'parkStatus');
-    fetchData('events', setLocalEvents, 'localEvents');
-    fetchData('events/proposals', setEventProposals, 'eventProposals'); // Assuming this endpoint exists
+    fetchDisruptions();
+  }, []);
+
+  // Fetch Shops API
+  useEffect(() => {
+    const fetchShops = async () => {
+      setLoading(prev => ({ ...prev, shopNotifications: true }));
+      try {
+        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/shops', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
+        });
+        if (!response.ok) throw new Error('Failed to fetch shops');
+        const result = await response.json();
+        setShopNotifications(result.data);
+      } catch (error) {
+        console.error(`Error fetching shops:`, error);
+        setShopNotifications([]);
+      } finally {
+        setLoading(prev => ({...prev, shopNotifications: false}));
+      }
+    };
+    fetchShops();
+  }, []);
+
+  // Fetch Parks API
+  useEffect(() => {
+    const fetchParks = async () => {
+      setLoading(prev => ({ ...prev, parkStatus: true }));
+      try {
+        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/parks', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
+        });
+        if (!response.ok) throw new Error('Failed to fetch parks');
+        const result = await response.json();
+        setParkStatus(result.data);
+      } catch (error) {
+        console.error(`Error fetching parks:`, error);
+        setParkStatus([]);
+      } finally {
+        setLoading(prev => ({...prev, parkStatus: false}));
+      }
+    };
+    fetchParks();
+  }, []);
+
+  // Fetch Events API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(prev => ({ ...prev, localEvents: true }));
+      try {
+        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/events', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
+        });
+        if (!response.ok) throw new Error('Failed to fetch events');
+        const result = await response.json();
+        setLocalEvents(result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) })));
+      } catch (error) {
+        console.error(`Error fetching events:`, error);
+        setLocalEvents([]);
+      } finally {
+        setLoading(prev => ({...prev, localEvents: false}));
+      }
+    };
+    fetchEvents();
   }, []);
   
+  // Fetch Event Proposals API
+  useEffect(() => {
+    const fetchEventProposals = async () => {
+      setLoading(prev => ({ ...prev, eventProposals: true }));
+      try {
+        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/events/proposals', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
+        });
+        if (!response.ok) throw new Error('Failed to fetch event proposals');
+        const result = await response.json();
+        setEventProposals(result.data.map((item: any) => ({ ...item, eventDate: new Date(item.eventDate)})));
+      } catch (error) {
+        console.error(`Error fetching event proposals:`, error);
+        setEventProposals([]);
+      } finally {
+        setLoading(prev => ({...prev, eventProposals: false}));
+      }
+    };
+    // Fetch proposals when the dialog is opened for the first time
+    if(isReviewingProposals) {
+        fetchEventProposals();
+    }
+  }, [isReviewingProposals]);
+
   const handleSort = (table: keyof typeof sortConfig, key: string) => {
     setSortConfig(prev => {
       const currentDirection = prev[table].direction;
@@ -906,5 +977,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
