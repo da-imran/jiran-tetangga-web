@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
       }
       form.reset(defaultValues);
     } else if (action?.type === 'add') {
-      form.reset();
+      form.reset({});
     }
   }, [action, form]);
 
@@ -1211,6 +1211,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
-
