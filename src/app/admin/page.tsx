@@ -2,6 +2,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { AppHeader } from "@/components/header";
 import {
   Table,
@@ -14,7 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bell, Pencil, PlusCircle, Trash2, ArrowUpDown, ChevronDown } from "lucide-react";
+import { Bell, Pencil, PlusCircle, Trash2, ArrowUpDown, ChevronDown, CalendarIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +42,53 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, formatDistanceToNow, parse } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+
+// Schemas for form validation
+const roadDisruptionSchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters long."),
+  description: z.string().min(10, "Description must be at least 10 characters long."),
+  category: z.string().min(1, "Please select a category."),
+});
+
+const shopNotificationSchema = z.object({
+  name: z.string().min(3, "Shop name is required."),
+  description: z.string().min(10, "Description is required."),
+  status: z.enum(["new", "closed", "promo"]),
+  openingHours: z.object({
+    opening: z.string().regex(/^\d{4}$/, "Opening time must be in HHmm format."),
+    closing: z.string().regex(/^\d{4}$/, "Closing time must be in HHmm format."),
+  }),
+});
+
+const parkStatusSchema = z.object({
+  name: z.string().min(3, "Park name is required."),
+  description: z.string().min(10, "Description is required."),
+  status: z.enum(["open", "closed", "maintenance"]),
+   openingHours: z.object({
+    opening: z.string().regex(/^\d{4}$/, "Opening time must be in HHmm format."),
+    closing: z.string().regex(/^\d{4}$/, "Closing time must be in HHmm format."),
+  }),
+});
+
+const localEventSchema = z.object({
+  title: z.string().min(5, "Event title is required."),
+  description: z.string().min(10, "Description is required."),
+  location: z.string().min(3, "Location is required."),
+  eventDate: z.date({ required_error: "Event date is required." }),
+});
+
+const formSchemas = {
+  'Road Disruption': roadDisruptionSchema,
+  'Shop Notification': shopNotificationSchema,
+  'Park Status': parkStatusSchema,
+  'Local Event': localEventSchema,
+};
+
 
 const ITEMS_PER_PAGE = 3;
 type SortDirection = "ascending" | "descending";
@@ -48,10 +98,30 @@ interface SortConfig {
 }
 
 export default function AdminDashboardPage() {
+  const { toast } = useToast();
   const [action, setAction] = useState<{ type: 'add' | 'edit' | 'delete', itemType: string, data?: any } | null>(null);
   const [isReviewingProposals, setIsReviewingProposals] = useState(false);
   const [proposalToReject, setProposalToReject] = useState<any | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const form = useForm({
+    resolver: action ? zodResolver(formSchemas[action.itemType as keyof typeof formSchemas]) : undefined,
+  });
+
+  useEffect(() => {
+    if (action?.type === 'edit' && action.data) {
+      const itemType = action.itemType;
+      let defaultValues = { ...action.data };
+      if (itemType === 'Local Event') {
+        defaultValues.eventDate = new Date(action.data.eventDate);
+      }
+      form.reset(defaultValues);
+    } else {
+      form.reset();
+    }
+  }, [action, form]);
+
 
   const [roadDisruptions, setRoadDisruptions] = useState<any[]>([]);
   const [localEvents, setLocalEvents] = useState<any[]>([]);
@@ -96,118 +166,105 @@ export default function AdminDashboardPage() {
     parkStatus: [],
   });
 
-  // Fetch Disruptions API
-  useEffect(() => {
-    const fetchDisruptions = async () => {
-      setLoading(prev => ({ ...prev, roadDisruptions: true }));
-      try {
-        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/disruptions', {
+  const fetchData = async (endpoint: string, setData: Function, setLoadingState: Function, dataKey: string) => {
+    setLoadingState((prev: any) => ({ ...prev, [dataKey]: true }));
+    try {
+        const response = await fetch(`http://localhost:3500/jiran-tetangga/v1/${endpoint}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
         });
-        if (!response.ok) throw new Error('Failed to fetch disruptions');
+        if (!response.ok) throw new Error(`Failed to fetch ${dataKey}`);
         const result = await response.json();
-        setRoadDisruptions(result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) })));
-      } catch (error) {
-        console.error(`Error fetching disruptions:`, error);
-        setRoadDisruptions([]);
-      } finally {
-        setLoading(prev => ({...prev, roadDisruptions: false}));
-      }
-    };
-    fetchDisruptions();
+        
+        let processedData = result.data;
+        if (dataKey === 'roadDisruptions') {
+            processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
+        } else if (dataKey === 'localEvents') {
+            processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) }));
+        } else if (dataKey === 'eventProposals') {
+             processedData = result.data.map((item: any) => ({ ...item, eventDate: new Date(item.eventDate) }));
+        }
+
+        setData(processedData);
+    } catch (error) {
+        console.error(`Error fetching ${dataKey}:`, error);
+        setData([]);
+    } finally {
+        setLoadingState((prev: any) => ({ ...prev, [dataKey]: false }));
+    }
+  };
+
+  useEffect(() => {
+    fetchData('disruptions', setRoadDisruptions, setLoading, 'roadDisruptions');
+    fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
+    fetchData('parks', setParkStatus, setLoading, 'parkStatus');
+    fetchData('events', setLocalEvents, setLoading, 'localEvents');
   }, []);
 
-  // Fetch Shops API
   useEffect(() => {
-    const fetchShops = async () => {
-      setLoading(prev => ({ ...prev, shopNotifications: true }));
-      try {
-        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/shops', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
-        });
-        if (!response.ok) throw new Error('Failed to fetch shops');
-        const result = await response.json();
-        setShopNotifications(result.data);
-      } catch (error) {
-        console.error(`Error fetching shops:`, error);
-        setShopNotifications([]);
-      } finally {
-        setLoading(prev => ({...prev, shopNotifications: false}));
-      }
-    };
-    fetchShops();
-  }, []);
-
-  // Fetch Parks API
-  useEffect(() => {
-    const fetchParks = async () => {
-      setLoading(prev => ({ ...prev, parkStatus: true }));
-      try {
-        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/parks', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
-        });
-        if (!response.ok) throw new Error('Failed to fetch parks');
-        const result = await response.json();
-        setParkStatus(result.data);
-      } catch (error) {
-        console.error(`Error fetching parks:`, error);
-        setParkStatus([]);
-      } finally {
-        setLoading(prev => ({...prev, parkStatus: false}));
-      }
-    };
-    fetchParks();
-  }, []);
-
-  // Fetch Events API
-  useEffect(() => {
-    const fetchEvents = async () => {
-      setLoading(prev => ({ ...prev, localEvents: true }));
-      try {
-        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/events', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
-        });
-        if (!response.ok) throw new Error('Failed to fetch events');
-        const result = await response.json();
-        setLocalEvents(result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) })));
-      } catch (error) {
-        console.error(`Error fetching events:`, error);
-        setLocalEvents([]);
-      } finally {
-        setLoading(prev => ({...prev, localEvents: false}));
-      }
-    };
-    fetchEvents();
-  }, []);
-  
-  // Fetch Event Proposals API
-  useEffect(() => {
-    const fetchEventProposals = async () => {
-      setLoading(prev => ({ ...prev, eventProposals: true }));
-      try {
-        const response = await fetch('http://localhost:3500/jiran-tetangga/v1/events/proposals', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
-        });
-        if (!response.ok) throw new Error('Failed to fetch event proposals');
-        const result = await response.json();
-        setEventProposals(result.data.map((item: any) => ({ ...item, eventDate: new Date(item.eventDate)})));
-      } catch (error) {
-        console.error(`Error fetching event proposals:`, error);
-        setEventProposals([]);
-      } finally {
-        setLoading(prev => ({...prev, eventProposals: false}));
-      }
-    };
-    // Fetch proposals when the dialog is opened for the first time
-    if(isReviewingProposals) {
-        fetchEventProposals();
+    if (isReviewingProposals) {
+      fetchData('events/proposals', setEventProposals, setLoading, 'eventProposals');
     }
   }, [isReviewingProposals]);
+  
+  const closeDialogs = () => {
+    setAction(null);
+    form.reset();
+  };
+
+  const handleFormSubmit = async (values: any) => {
+    if (!action) return;
+
+    setIsSubmitting(true);
+    const { type, itemType, data } = action;
+    const isEdit = type === 'edit';
+    const method = isEdit ? 'PUT' : 'POST';
+    
+    const endpointMap: { [key: string]: string } = {
+        'Road Disruption': 'disruptions',
+        'Shop Notification': 'shops',
+        'Park Status': 'parks',
+        'Local Event': 'events',
+    };
+    const endpoint = endpointMap[itemType];
+    const url = isEdit ? `http://localhost:3500/jiran-tetangga/v1/${endpoint}/${data._id}` : `http://localhost:3500/jiran-tetangga/v1/${endpoint}`;
+    
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': 'jxdMegN9KOAZMwMCfIbV' },
+            body: JSON.stringify(values),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Failed to ${type} ${itemType}`);
+        }
+
+        toast({
+            title: "Success!",
+            description: `${itemType} has been successfully ${isEdit ? 'updated' : 'added'}.`,
+        });
+
+        // Refetch data
+        if (itemType === 'Road Disruption') fetchData('disruptions', setRoadDisruptions, setLoading, 'roadDisruptions');
+        if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
+        if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, 'parkStatus');
+        if (itemType === 'Local Event') fetchData('events', setLocalEvents, setLoading, 'localEvents');
+
+        closeDialogs();
+    } catch (error: any) {
+        console.error(`Error submitting form for ${itemType}:`, error);
+        toast({
+            variant: "destructive",
+            title: "An error occurred.",
+            description: error.message || `Could not ${type} the ${itemType}. Please try again.`,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
 
   const handleSort = (table: keyof typeof sortConfig, key: string) => {
     setSortConfig(prev => {
@@ -243,10 +300,6 @@ export default function AdminDashboardPage() {
   
   const handleAction = (type: 'add' | 'edit' | 'delete', itemType: string, data?: any) => {
     setAction({ type, itemType, data });
-  };
-  
-  const closeDialogs = () => {
-    setAction(null);
   };
   
   const handleRejectSubmit = () => {
@@ -399,6 +452,195 @@ export default function AdminDashboardPage() {
     return filteredEventProposals.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredEventProposals, currentPage.eventProposals]);
   const totalEventProposalPages = Math.ceil(filteredEventProposals.length / ITEMS_PER_PAGE);
+  
+  const renderForm = () => {
+    if (!action || (action.type !== 'add' && action.type !== 'edit')) return null;
+
+    const { itemType } = action;
+
+    switch (itemType) {
+      case 'Road Disruption':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="title" data-speakable="true">Title</Label>
+              <Input id="title" {...form.register("title")} />
+              {form.formState.errors.title && <p className="text-sm text-destructive">{form.formState.errors.title.message as string}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description" data-speakable="true">Description</Label>
+              <Textarea id="description" {...form.register("description")} />
+              {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message as string}</p>}
+            </div>
+             <div className="space-y-2">
+                <Label data-speakable="true">Category</Label>
+                <Controller
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="road-damage">Road Damage</SelectItem>
+                            <SelectItem value="traffic-congestion">Traffic Congestion</SelectItem>
+                            <SelectItem value="road-closure">Road Closure</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    )}
+                />
+                 {form.formState.errors.category && <p className="text-sm text-destructive">{form.formState.errors.category.message as string}</p>}
+            </div>
+          </>
+        );
+      case 'Shop Notification':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="name" data-speakable="true">Shop Name</Label>
+              <Input id="name" {...form.register("name")} />
+               {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message as string}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description" data-speakable="true">Description</Label>
+              <Textarea id="description" {...form.register("description")} />
+              {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message as string}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label data-speakable="true">Status</Label>
+              <Controller
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                      <SelectItem value="promo">Promo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+               {form.formState.errors.status && <p className="text-sm text-destructive">{form.formState.errors.status.message as string}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="opening" data-speakable="true">Opening Time (HHmm)</Label>
+                    <Input id="opening" {...form.register("openingHours.opening")} />
+                     {form.formState.errors.openingHours?.opening && <p className="text-sm text-destructive">{form.formState.errors.openingHours.opening.message as string}</p>}
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="closing" data-speakable="true">Closing Time (HHmm)</Label>
+                    <Input id="closing" {...form.register("openingHours.closing")} />
+                    {form.formState.errors.openingHours?.closing && <p className="text-sm text-destructive">{form.formState.errors.openingHours.closing.message as string}</p>}
+                </div>
+            </div>
+          </>
+        );
+        case 'Park Status':
+            return (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="name" data-speakable="true">Park Name</Label>
+                  <Input id="name" {...form.register("name")} />
+                  {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message as string}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description" data-speakable="true">Description</Label>
+                  <Textarea id="description" {...form.register("description")} />
+                   {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message as string}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label data-speakable="true">Status</Label>
+                  <Controller
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                         <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="open">Open</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                          <SelectItem value="maintenance">Maintenance</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {form.formState.errors.status && <p className="text-sm text-destructive">{form.formState.errors.status.message as string}</p>}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="opening" data-speakable="true">Opening Time (HHmm)</Label>
+                        <Input id="opening" {...form.register("openingHours.opening")} />
+                        {form.formState.errors.openingHours?.opening && <p className="text-sm text-destructive">{form.formState.errors.openingHours.opening.message as string}</p>}
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="closing" data-speakable="true">Closing Time (HHmm)</Label>
+                        <Input id="closing" {...form.register("openingHours.closing")} />
+                         {form.formState.errors.openingHours?.closing && <p className="text-sm text-destructive">{form.formState.errors.openingHours.closing.message as string}</p>}
+                    </div>
+                </div>
+              </>
+            );
+        case 'Local Event':
+            return (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="title" data-speakable="true">Event Title</Label>
+                  <Input id="title" {...form.register("title")} />
+                   {form.formState.errors.title && <p className="text-sm text-destructive">{form.formState.errors.title.message as string}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description" data-speakable="true">Description</Label>
+                  <Textarea id="description" {...form.register("description")} />
+                  {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message as string}</p>}
+                </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="location" data-speakable="true">Location</Label>
+                  <Input id="location" {...form.register("location")} />
+                   {form.formState.errors.location && <p className="text-sm text-destructive">{form.formState.errors.location.message as string}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label data-speakable="true">Event Date</Label>
+                    <Controller
+                        control={form.control}
+                        name="eventDate"
+                        render={({ field }) => (
+                         <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                )}
+                                >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        )}
+                    />
+                     {form.formState.errors.eventDate && <p className="text-sm text-destructive">{form.formState.errors.eventDate.message as string}</p>}
+                </div>
+              </>
+            );
+      default:
+        return <p>No form available for this item type.</p>;
+    }
+  };
+
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -838,7 +1080,7 @@ export default function AdminDashboardPage() {
       
       {/* Dialog for Add/Edit */}
       <Dialog open={action?.type === 'add' || action?.type === 'edit'} onOpenChange={closeDialogs}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle data-speakable="true">
               {action?.type === 'add' ? 'Add New' : 'Edit'} {action?.itemType}
@@ -847,18 +1089,17 @@ export default function AdminDashboardPage() {
               Make changes here. Click save when you're done.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <p data-speakable="true">Form fields for the {action?.itemType?.toLowerCase()} will go here.</p>
-            {action?.type === 'edit' && (
-              <pre className="mt-4 rounded-md bg-muted p-4 text-xs">
-                {JSON.stringify(action.data, null, 2)}
-              </pre>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={closeDialogs}>Cancel</Button>
-            <Button onClick={closeDialogs}>Save Changes</Button>
-          </DialogFooter>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)}>
+            <div className="grid gap-4 py-4">
+              {renderForm()}
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={closeDialogs} type="button">Cancel</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
       
@@ -977,3 +1218,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
