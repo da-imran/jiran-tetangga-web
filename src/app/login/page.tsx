@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -35,16 +34,15 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const response = await api.post('/auth/login', data);
-      
-      if (response.token) {
-        localStorage.setItem('authToken', response.token);
-        localStorage.setItem('adminUser', JSON.stringify({ email: data.email })); // Store user info
+      if (response.data?.token) {
+        localStorage.setItem('authToken', response.data.token);
+        localStorage.setItem('adminUser', response.data.email);
         toast({
           title: 'Login Successful',
           description: 'Welcome back, admin!',
         });
         router.push('/admin');
-        router.refresh(); // This will re-trigger layout/page rendering with new auth state
+        router.refresh();
       } else {
         throw new Error(response.message || 'Login failed.');
       }
