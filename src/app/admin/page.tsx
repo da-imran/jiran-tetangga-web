@@ -108,18 +108,19 @@ export default function AdminDashboardPage() {
   
   const form = useForm({
     resolver: action ? zodResolver(formSchemas[action.itemType as keyof typeof formSchemas]) : undefined,
+    defaultValues: {}
   });
 
   useEffect(() => {
     if (action?.type === 'edit' && action.data) {
       const itemType = action.itemType;
       let defaultValues = { ...action.data };
-      if (itemType === 'Local Event') {
+      if (itemType === 'Local Event' && action.data.eventDate) {
         defaultValues.eventDate = new Date(action.data.eventDate);
       }
       form.reset(defaultValues);
-    } else {
-      form.reset();
+    } else if (action?.type === 'add') {
+      form.reset({});
     }
   }, [action, form]);
 
@@ -210,7 +211,7 @@ export default function AdminDashboardPage() {
   
   const closeDialogs = () => {
     setAction(null);
-    form.reset();
+    form.reset({});
   };
 
   const handleFormSubmit = async (values: any) => {
@@ -1071,7 +1072,7 @@ export default function AdminDashboardPage() {
       </main>
       
       {/* Dialog for Add/Edit */}
-      <Dialog open={action?.type === 'add' || action?.type === 'edit'} onOpenChange={closeDialogs}>
+      <Dialog open={action?.type === 'add' || action?.type === 'edit'} onOpenChange={(open) => !open && closeDialogs()}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle data-speakable="true">
@@ -1096,7 +1097,7 @@ export default function AdminDashboardPage() {
       </Dialog>
       
       {/* AlertDialog for Delete */}
-      <AlertDialog open={action?.type === 'delete'} onOpenChange={closeDialogs}>
+      <AlertDialog open={action?.type === 'delete'} onOpenChange={(open) => !open && closeDialogs()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle data-speakable="true">Are you absolutely sure?</AlertDialogTitle>
