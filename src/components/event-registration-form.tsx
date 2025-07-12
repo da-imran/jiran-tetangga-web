@@ -25,13 +25,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
-  eventName: z.string().min(5, { message: "Event name must be at least 5 characters." }),
+  title: z.string().min(1, { message: "Event title is required." }),
   eventDate: z.date({
-    required_error: "A date for the event is required.",
+    required_error: "Date is required.",
   }),
-  description: z.string().min(10, { message: "Description must be at least 10 characters long." }),
-  organizerName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
-  organizerEmail: z.string().email({ message: "Please enter a valid email address." }),
+  description: z.string().min(1, { message: "Description is required. Input event time if any." }),
+  organizerName: z.string().min(1, { message: "Full name is required." }),
+  organizerEmail: z.string().min(1, { message: "Email is required." }),
 });
 
 type EventRegistrationFormProps = {
@@ -44,18 +44,19 @@ export function EventRegistrationForm({ onFormSubmit }: EventRegistrationFormPro
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      eventName: "",
+      title: "",
       description: "",
       organizerName: "",
       organizerEmail: "",
+      eventDate: new Date(),
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+    console.log('Event submit here', values);
     toast({
       title: "Event Proposed!",
-      description: `Your event, "${values.eventName}", has been submitted for review.`,
+      description: `Your event, "${values.title}", has been submitted for review.`,
     });
     form.reset();
     if (onFormSubmit) {
@@ -68,10 +69,10 @@ export function EventRegistrationForm({ onFormSubmit }: EventRegistrationFormPro
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="eventName"
+          name="title"
           render={({ field }) => (
             <FormItem data-speakable="true">
-              <FormLabel>Event Name</FormLabel>
+              <FormLabel>Event Title</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Community Cleanup Day" {...field} />
               </FormControl>
