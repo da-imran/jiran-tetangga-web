@@ -505,7 +505,7 @@ export default function Home() {
                       Propose an Event
                     </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
                   <DialogHeader>
                     <DialogTitle data-speakable="true">Propose a New Event</DialogTitle>
                     <DialogDescription data-speakable="true">
