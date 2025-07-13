@@ -4,8 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Image from 'next/image';
 import { format, parse, subDays, isSameDay, formatDistanceToNow } from "date-fns";
-import { Calendar as CalendarIcon, CalendarDays, Eye, PenSquare, Store, Trees, TrafficCone, Clock } from "lucide-react";
-
+import { Calendar as CalendarIcon, CalendarDays, Eye, PenSquare, Store, Trees, TrafficCone, Clock, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DashboardCard } from "@/components/dashboard-card";
 import { AppHeader } from "@/components/header";
@@ -13,9 +12,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { EventProposalForm } from "@/components/event-proposal-form";
 
 export default function Home() {
   const [selectedImageData, setSelectedImageData] = useState<{ src: string; alt: string; hint: string } | null>(null);
@@ -24,6 +24,7 @@ export default function Home() {
   const [detailsContent, setDetailsContent] = useState<{ title: string; description: string; content: React.ReactNode } | null>(null);
   const [roadDisruptionDate, setRoadDisruptionDate] = useState<Date | undefined>(new Date());
   const [eventsDate, setEventDate] = useState<Date | undefined>(new Date());
+  const [isProposeEventOpen, setIsProposeEventOpen] = useState(false);
   
   type RoadDisruption = { 
     id: string; 
@@ -495,6 +496,25 @@ export default function Home() {
             title="Local Events"
             icon={<CalendarDays className="h-6 w-6 text-primary" />}
             description="Upcoming community events and ceremonies."
+            headerActions={
+              <Dialog>
+                <DialogTrigger asChild>
+                   <Button variant="outline" size="sm">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Propose an Event
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle data-speakable="true">Propose a New Event</DialogTitle>
+                    <DialogDescription data-speakable="true">
+                      Fill out the form below to propose a new community event. It will be reviewed by an administrator.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <EventProposalForm />
+                </DialogContent>
+              </Dialog>
+            }
             onSeeMore={() => handleSeeMore(
               "All Local Events",
               "Here are all upcoming community events. Click the view icon for more details.",
