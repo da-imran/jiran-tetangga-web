@@ -5,14 +5,17 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
-import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
+import {
+  DateValue,
+  getLocalTimeZone,
+  today,
+} from "@internationalized/date";
 
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -31,7 +34,7 @@ const formSchema = z.object({
   description: z.string().min(10, "Description is required.").max(500),
   organizerName: z.string().min(2, "Your name is required."),
   organizerEmail: z.string().email("Please enter a valid email address."),
-  eventDate: z.date({ required_error: "Please select a date for the event." }),
+  eventDate: z.any().refine(val => val, { message: "Please select a date for the event." }),
   location: z.string().min(3, "Location is required."),
 });
 
@@ -47,13 +50,18 @@ export function EventProposalForm() {
       organizerName: "",
       organizerEmail: "",
       location: "",
+      eventDate: null,
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
+    const payload = {
+        ...values,
+        eventDate: values.eventDate.toDate(getLocalTimeZone()).toISOString(),
+    };
     try {
-        await api.post('/events/propose', values);
+        await api.post('/events/propose', payload);
         toast({
             title: "Proposal Submitted!",
             description: "Thank you for your submission. An administrator will review your proposal shortly.",
@@ -151,7 +159,7 @@ export function EventProposalForm() {
             render={({ field }) => (
                 <FormItem className="flex flex-col" data-speakable="true">
                     <FormLabel>Proposed Date</FormLabel>
-                    <Popover modal={false}>
+                    <Popover>
                         <PopoverTrigger asChild>
                         <FormControl>
                             <Button
@@ -162,7 +170,7 @@ export function EventProposalForm() {
                             )}
                             >
                             {field.value ? (
-                                format(field.value, "PPP")
+                                field.value.toString()
                             ) : (
                                 <span>Pick a date</span>
                             )}
@@ -172,13 +180,10 @@ export function EventProposalForm() {
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                                date < new Date()
-                            }
-                            initialFocus
+                            aria-label="Proposed date"
+                            value={field.value as DateValue | undefined}
+                            onChange={field.onChange}
+                            minValue={today(getLocalTimeZone())}
                         />
                         </PopoverContent>
                     </Popover>

@@ -41,13 +41,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, formatDistanceToNow, parse } from "date-fns";
+import { formatDistanceToNow, parse } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { DateValue, parseDate, getLocalTimeZone, today } from "@internationalized/date";
 
 // Schemas for form validation
 const roadDisruptionSchema = z.object({
@@ -80,7 +81,7 @@ const localEventSchema = z.object({
   title: z.string().min(5, "Event title is required."),
   description: z.string().min(10, "Description is required."),
   location: z.string().min(3, "Location is required."),
-  eventDate: z.date({ required_error: "Event date is required." }),
+  eventDate: z.any().refine(val => val, { message: "Event date is required."}),
 });
 
 const formSchemas = {
@@ -115,12 +116,20 @@ export default function AdminDashboardPage() {
     if (action?.type === 'edit' && action.data) {
       const itemType = action.itemType;
       let defaultValues = { ...action.data };
-      if (itemType === 'Local Event' && action.data.eventDate) {
-        defaultValues.eventDate = new Date(action.data.eventDate);
+       if (itemType === 'Local Event' && action.data.eventDate) {
+        // Convert ISO string back to DateValue
+        try {
+          defaultValues.eventDate = parseDate(action.data.eventDate.split('T')[0]);
+        } catch(e) {
+          console.error("Error parsing date for edit:", e);
+          defaultValues.eventDate = null;
+        }
       }
       form.reset(defaultValues);
     } else if (action?.type === 'add') {
-      form.reset({});
+      form.reset({
+        eventDate: null,
+      });
     }
   }, [action, form]);
 
@@ -220,6 +229,11 @@ export default function AdminDashboardPage() {
     setIsSubmitting(true);
     const { type, itemType, data } = action;
     const isEdit = type === 'edit';
+
+    let payload = { ...values };
+    if (itemType === 'Local Event' && payload.eventDate) {
+      payload.eventDate = payload.eventDate.toDate(getLocalTimeZone()).toISOString();
+    }
     
     const endpointMap: { [key: string]: string } = {
         'Road Disruption': 'disruptions',
@@ -232,7 +246,7 @@ export default function AdminDashboardPage() {
     const method = isEdit ? 'put' : 'post';
     
     try {
-        const response = await api[method](url, values);
+        const response = await api[method](url, payload);
 
         toast({
             title: "Success!",
@@ -597,34 +611,34 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="space-y-2">
                     <Label data-speakable="true">Event Date</Label>
-                    <Controller
+                     <Controller
                         control={form.control}
                         name="eventDate"
                         render={({ field }) => (
-                         <Popover>
+                          <Popover>
                             <PopoverTrigger asChild>
-                                <Button
+                              <Button
                                 variant={"outline"}
                                 className={cn(
-                                    "w-full justify-start text-left font-normal",
-                                    !field.value && "text-muted-foreground"
+                                  "w-full justify-start text-left font-normal",
+                                  !field.value && "text-muted-foreground"
                                 )}
-                                >
+                              >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                </Button>
+                                {field.value ? field.value.toString() : <span>Pick a date</span>}
+                              </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                                />
+                              <Calendar
+                                aria-label="Event date"
+                                value={field.value as DateValue | undefined}
+                                onChange={field.onChange}
+                                minValue={today(getLocalTimeZone())}
+                              />
                             </PopoverContent>
-                        </Popover>
+                          </Popover>
                         )}
-                    />
+                      />
                      {form.formState.errors.eventDate && <p className="text-sm text-destructive">{form.formState.errors.eventDate.message as string}</p>}
                 </div>
               </>
@@ -1025,7 +1039,7 @@ export default function AdminDashboardPage() {
                   paginatedLocalEvents.length > 0 ? paginatedLocalEvents.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
-                      <TableCell data-speakable="true">{format(item.date, 'PPP')}</TableCell>
+                      <TableCell data-speakable="true">{new Date(item.date).toLocaleDateString()}</TableCell>
                       <TableCell data-speakable="true">{item.location}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Local Event', item)}>
@@ -1142,7 +1156,7 @@ export default function AdminDashboardPage() {
                     <CardDescription data-speakable="true">Proposed by: {proposal.organizerName} ({proposal.organizerEmail})</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
-                    <p data-speakable="true"><span className="font-semibold">Proposed Date:</span> {format(proposal.eventDate, "PPP")}</p>
+                    <p data-speakable="true"><span className="font-semibold">Proposed Date:</span> {new Date(proposal.eventDate).toLocaleDateString()}</p>
                     <p className="text-muted-foreground" data-speakable="true">{proposal.description}</p>
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2">

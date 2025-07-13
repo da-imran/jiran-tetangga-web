@@ -3,8 +3,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from 'next/image';
-import { format, parse, subDays, isSameDay, formatDistanceToNow } from "date-fns";
+import { isSameDay, subDays, formatDistanceToNow, parse } from 'date-fns';
 import { Calendar as CalendarIcon, CalendarDays, Eye, PenSquare, Store, Trees, TrafficCone, Clock, PlusCircle } from "lucide-react";
+import { DateValue, getLocalTimeZone, today } from '@internationalized/date';
+
 
 import { cn } from "@/lib/utils";
 import { DashboardCard } from "@/components/dashboard-card";
@@ -23,8 +25,8 @@ export default function Home() {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsContent, setDetailsContent] = useState<{ title: string; description: string; content: React.ReactNode } | null>(null);
-  const [roadDisruptionDate, setRoadDisruptionDate] = useState<Date | undefined>(new Date());
-  const [eventsDate, setEventDate] = useState<Date | undefined>(new Date());
+  const [roadDisruptionDate, setRoadDisruptionDate] = useState<DateValue | undefined>(today(getLocalTimeZone()));
+  const [eventsDate, setEventDate] = useState<DateValue | undefined>(today(getLocalTimeZone()));
   const [isProposeEventOpen, setIsProposeEventOpen] = useState(false);
   
   type RoadDisruption = { 
@@ -49,8 +51,8 @@ export default function Home() {
     id: string; 
     name: string; 
     description: string; 
-    opening: Date;
-    closing: Date;
+    opening: string;
+    closing: string;
     status: string; 
     image: string; 
     hint: string
@@ -122,8 +124,8 @@ export default function Home() {
           id: post._id,
           name: post.name,
           description: post.description,
-          opening: format(parse(post.openingHours.opening, 'HHmm', new Date()), 'hh:mm a'),
-          closing: format(parse(post.openingHours.closing, 'HHmm', new Date()), 'hh:mm a'),
+          opening: new Date(`1970-01-01T${post.openingHours.opening.slice(0,2)}:${post.openingHours.opening.slice(2,4)}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
+          closing: new Date(`1970-01-01T${post.openingHours.closing.slice(0,2)}:${post.openingHours.closing.slice(2,4)}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
           status: post.status,
           image: `https://placehold.co/600x400.png?text=${post.name.replace(/\s+/g, '+')}`,
           hint: 'shop',
@@ -149,8 +151,8 @@ export default function Home() {
           id: park._id,
           name: park.name,
           description: park.description,
-          opening: format(parse(park.openingHours.opening, 'HHmm', new Date()), 'hh:mm a'),
-          closing: format(parse(park.openingHours.closing, 'HHmm', new Date()), 'hh:mm a'),
+          opening: new Date(`1970-01-01T${park.openingHours.opening.slice(0,2)}:${park.openingHours.opening.slice(2,4)}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
+          closing: new Date(`1970-01-01T${park.openingHours.closing.slice(0,2)}:${park.openingHours.closing.slice(2,4)}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
           status: park.status,
           image: `https://placehold.co/600x400.png?text=${park.name.replace(/\s+/g, '+')}`,
           hint: 'park',
@@ -195,16 +197,18 @@ export default function Home() {
   // Road Disruption date filer
   const filteredRoadDisruptions = useMemo(() => {
     if (!roadDisruptionDate) return [];
+    const selectedJSDate = roadDisruptionDate.toDate(getLocalTimeZone());
     return roadDisruptions.filter((disruption) =>
-      isSameDay(disruption.date, roadDisruptionDate)
+      isSameDay(disruption.date, selectedJSDate)
     );
   }, [roadDisruptions, roadDisruptionDate]);
 
   // Events date filter
   const filteredEvents = useMemo(() => {
     if (!eventsDate) return [];
+    const selectedJSDate = eventsDate.toDate(getLocalTimeZone());
     return localEvents.filter((event) =>
-      isSameDay(event.date, eventsDate)
+      isSameDay(event.date, selectedJSDate)
     );
   }, [localEvents, eventsDate]);
 
@@ -272,7 +276,7 @@ export default function Home() {
                   roadDisruptions.map((disruption: RoadDisruption) => (
                     <li key={disruption.id} className="flex items-start justify-between rounded-md border p-4" data-speakable="true">
                         <span className="text-sm font-medium">{disruption.description}</span>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">{format(disruption.date, "PPP")}</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(disruption.date).toLocaleDateString()}</span>
                     </li>
                   ))
                 ) : (
@@ -292,18 +296,16 @@ export default function Home() {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {roadDisruptionDate ? format(roadDisruptionDate, "PPP") : <span>Pick a date</span>}
+                    {roadDisruptionDate ? roadDisruptionDate.toString() : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
-                    mode="single"
-                    selected={roadDisruptionDate}
-                    onSelect={setRoadDisruptionDate}
-                    initialFocus
-                    disabled={(date) =>
-                      date > new Date() || date < subDays(new Date(), 7)
-                    }
+                    aria-label="Road disruption date"
+                    value={roadDisruptionDate}
+                    onChange={setRoadDisruptionDate}
+                    minValue={today(getLocalTimeZone()).subtract({ days: 7 })}
+                    maxValue={today(getLocalTimeZone())}
                   />
                 </PopoverContent>
               </Popover>
@@ -531,7 +533,7 @@ export default function Home() {
                    <li key={event.id} className="flex items-center justify-between rounded-md border p-4" data-speakable="true">
                     <div>
                       <p className="font-semibold text-sm">{event.title}</p>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">{format(event.date, "PPP")}</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(event.date).toLocaleDateString()}</span>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleSeeMore(
                       event.title,
@@ -539,7 +541,7 @@ export default function Home() {
                       <div className="space-y-2" data-speakable="true">
                         <p className="text-sm">{event.description}</p>
                         <p className="text-sm"><span className="font-semibold">Location:</span> {event.location}</p>
-                        <p className="text-sm"><span className="font-semibold">Date:</span> {format(event.date, "PPP")}</p>
+                        <p className="text-sm"><span className="font-semibold">Date:</span> {new Date(event.date).toLocaleDateString()}</p>
                       </div>
                     )}>
                       <Eye className="h-4 w-4" />
@@ -563,15 +565,15 @@ export default function Home() {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {eventsDate ? format(eventsDate, "PPP") : <span>Pick a date</span>}
+                    {eventsDate ? eventsDate.toString() : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
-                    mode="single"
-                    selected={eventsDate}
-                    onSelect={setEventDate}
-                    initialFocus
+                    aria-label="Event date"
+                    value={eventsDate}
+                    onChange={setEventDate}
+                    minValue={today(getLocalTimeZone())}
                   />
                 </PopoverContent>
               </Popover>
@@ -585,7 +587,7 @@ export default function Home() {
                   <li key={event.id} className="flex items-center justify-between" data-speakable="true">
                     <div>
                       <p className="font-semibold text-sm">{event.title}</p>
-                      <p className="text-xs text-muted-foreground">{format(event.date, "PPP")}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(event.date).toLocaleDateString()}</p>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleSeeMore(
                       event.title,
@@ -593,7 +595,7 @@ export default function Home() {
                       <div className="space-y-2" data-speakable="true">
                         <p className="text-sm">{event.description}</p>
                         <p className="text-sm"><span className="font-semibold">Location:</span> {event.location}</p>
-                        <p className="text-sm"><span className="font-semibold">Date:</span> {format(event.date, "PPP")}</p>
+                        <p className="text-sm"><span className="font-semibold">Date:</span> {new Date(event.date).toLocaleDateString()}</p>
                       </div>
                     )}>
                       <Eye className="h-4 w-4" />
