@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { EventRegistrationForm } from "@/components/event-registration-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 
@@ -23,7 +22,6 @@ export default function Home() {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsContent, setDetailsContent] = useState<{ title: string; description: string; content: React.ReactNode } | null>(null);
-  const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
   const [roadDisruptionDate, setRoadDisruptionDate] = useState<Date | undefined>(new Date());
   const [eventsDate, setEventDate] = useState<Date | undefined>(new Date());
   
@@ -249,18 +247,6 @@ export default function Home() {
             <div className="max-h-[60vh] overflow-y-auto pr-2">
               {detailsContent?.content}
             </div>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={isRegistrationOpen} onOpenChange={setIsRegistrationOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle data-speakable="true">Propose a New Event</DialogTitle>
-              <DialogDescription data-speakable="true">
-                Fill out the form below to propose a new community event. Your proposal will be reviewed by an administrator.
-              </DialogDescription>
-            </DialogHeader>
-            <EventRegistrationForm onFormSubmit={() => setIsRegistrationOpen(false)} />
           </DialogContent>
         </Dialog>
 
@@ -544,12 +530,6 @@ export default function Home() {
               </ul>
 
             )}
-            headerActions={
-              <Button onClick={() => setIsRegistrationOpen(true)}>
-                <PenSquare className="mr-2 h-4 w-4" />
-                Apply
-              </Button>
-            }
           >
             <div className="flex flex-col gap-4">
               <Popover>
