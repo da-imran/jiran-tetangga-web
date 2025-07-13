@@ -151,7 +151,7 @@ export function EventProposalForm() {
             render={({ field }) => (
                 <FormItem className="flex flex-col" data-speakable="true">
                     <FormLabel>Proposed Date</FormLabel>
-                    <Popover>
+                    <Popover modal={false}>
                         <PopoverTrigger asChild>
                         <FormControl>
                             <Button
