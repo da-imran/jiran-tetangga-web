@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -17,7 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bell, Pencil, PlusCircle, Trash2, ArrowUpDown, ChevronDown, CalendarIcon } from "lucide-react";
+import { Bell, Pencil, PlusCircle, Trash2, ArrowUpDown, ChevronDown, CalendarIcon, Check, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -209,13 +210,8 @@ export default function AdminDashboardPage() {
     fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
     fetchData('parks', setParkStatus, setLoading, 'parkStatus');
     fetchData('events', setLocalEvents, setLoading, 'localEvents');
+    fetchData('events/proposals', setEventProposals, setLoading, 'eventProposals');
   }, []);
-
-  useEffect(() => {
-    if (isReviewingProposals) {
-      fetchData('events/proposals', setEventProposals, setLoading, 'eventProposals');
-    }
-  }, [isReviewingProposals]);
   
   const closeDialogs = () => {
     setAction(null);
@@ -271,6 +267,27 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleProposalStatusChange = async (proposalId: string, status: 'approved' | 'rejected') => {
+    try {
+      await api.put(`/events/proposals/${proposalId}/status`, { status });
+      toast({
+        title: "Success",
+        description: `Proposal has been ${status}.`
+      });
+      fetchData('events/proposals', setEventProposals, setLoading, 'eventProposals');
+      // Also refresh approved events list
+      if (status === 'approved') {
+        fetchData('events', setLocalEvents, setLoading, 'localEvents');
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: error.message || "Could not update the proposal status."
+      });
+    }
+  };
+
 
   const handleSort = (table: keyof typeof sortConfig, key: string) => {
     setSortConfig(prev => {
@@ -306,16 +323,6 @@ export default function AdminDashboardPage() {
   
   const handleAction = (type: 'add' | 'edit' | 'delete', itemType: string, data?: any) => {
     setAction({ type, itemType, data });
-  };
-  
-  const handleRejectSubmit = () => {
-    console.log(`Rejecting proposal ${proposalToReject.id} for reason: ${rejectionReason}`);
-    setProposalToReject(null);
-    setRejectionReason('');
-  };
-
-  const handleApprove = (proposalId: number) => {
-    console.log(`Approving proposal ${proposalId}`);
   };
   
   const SortArrow = ({ columnKey, table }: { columnKey: string, table: keyof typeof sortConfig }) => {
@@ -1069,6 +1076,91 @@ export default function AdminDashboardPage() {
                   size="sm"
                   onClick={() => handlePageChange('localEvents', currentPage.localEvents + 1)}
                   disabled={currentPage.localEvents >= totalLocalEventPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle data-speakable="true">Event Proposals</CardTitle>
+              <CardDescription data-speakable="true">Review and approve or reject new event proposals.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead data-speakable="true">Event Name</TableHead>
+                    <TableHead data-speakable="true">Organizer</TableHead>
+                    <TableHead data-speakable="true">Date</TableHead>
+                    <TableHead data-speakable="true">Status</TableHead>
+                    <TableHead className="text-right" data-speakable="true">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading.eventProposals ? renderSkeleton(5) : 
+                  paginatedEventProposals.length > 0 ? paginatedEventProposals.map((proposal) => (
+                    <TableRow key={proposal._id}>
+                      <TableCell className="font-medium" data-speakable="true">{proposal.eventName}</TableCell>
+                      <TableCell data-speakable="true">{proposal.organizerName}</TableCell>
+                      <TableCell data-speakable="true">{new Date(proposal.eventDate).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            proposal.status === 'approved' ? 'default' :
+                            proposal.status === 'rejected' ? 'destructive' :
+                            'secondary'
+                          }
+                          className={cn(
+                            proposal.status === 'approved' && 'bg-green-600',
+                            proposal.status === 'pending' && 'bg-yellow-500',
+                          )}
+                          data-speakable="true"
+                        >
+                          {proposal.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {proposal.status === 'pending' && (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleProposalStatusChange(proposal._id, 'approved')}>
+                              <Check className="h-4 w-4 text-green-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleProposalStatusChange(proposal._id, 'rejected')}>
+                              <X className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )) : (
+                     <TableRow>
+                        <TableCell colSpan={5} className="text-center h-24">No pending proposals.</TableCell>
+                     </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+             <CardFooter className="flex justify-between items-center">
+               <span className="text-sm text-muted-foreground">
+                Page {currentPage.eventProposals} of {totalEventProposalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('eventProposals', currentPage.eventProposals - 1)}
+                  disabled={currentPage.eventProposals <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('eventProposals', currentPage.eventProposals + 1)}
+                  disabled={currentPage.eventProposals >= totalEventProposalPages}
                 >
                   Next
                 </Button>
