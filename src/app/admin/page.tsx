@@ -79,7 +79,7 @@ const parkStatusSchema = z.object({
 
 const localEventSchema = z.object({
   title: z.string().min(5, "Event title is required."),
-  description: z.string().min(10, "Description is required."),
+  description: z.string().min(2, "Description is required."),
   location: z.string().min(3, "Location is required."),
   eventDate: z.any().refine(val => val, { message: "Event date is required."}),
   status: z.string().optional(),
@@ -226,13 +226,36 @@ export default function AdminDashboardPage() {
         'Park Status': 'parks',
         'Local Event': 'events',
     };
-    const endpoint = endpointMap[itemType];
-    const url = isEdit ? `/${endpoint}/${data._id}` : `/${endpoint}`;
-    const method = isEdit ? 'put' : 'post';
-    
-    try {
-        const response = await api[method](url, payload);
 
+    type ApiOptions = Omit<RequestInit, 'body'> & {
+      params?: Record<string, any>;
+      pathParams?: Record<string, string | number>;
+      body?: any;
+    };
+    
+    const endpoint = endpointMap[itemType];
+    const options: ApiOptions = { method: isEdit ? 'put' : 'post', body: payload };
+
+    let url = `/${endpoint}`;
+    const method = isEdit ? 'patch' : 'post';
+    
+
+    
+    if (isEdit) {
+      if (itemType === 'Local Event') {
+        // For Local Events, add eventId as a query parameter
+        options.params = { eventId: data._id };
+      } else if (itemType === 'Park Status') {
+        options.params = { park: data._id };
+      } else if (itemType === 'Shop Notification') {
+        options.params = { shop: data._id };
+      } else if (itemType === 'Road Disruption') {
+        options.params = { disruption: data._id };
+      }
+    }
+    try {
+        const response = await api[method](url, options.body, { params: options.params }); // Pass params here
+        console.log('response here?', response);
         toast({
             title: "Success!",
             description: `${itemType} has been successfully ${isEdit ? 'updated' : 'added'}.`,

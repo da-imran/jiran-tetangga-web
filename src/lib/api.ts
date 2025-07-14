@@ -81,6 +81,9 @@ export const api = {
     
     put: (endpoint: string, body: any, options?: ApiOptions) => 
         apiFetch(endpoint, { ...options, method: 'PUT', body }),
+
+    patch: (endpoint: string, body: any, options?: ApiOptions) => 
+        apiFetch(endpoint, { ...options, method: 'PATCH', body }),
     
     delete: (endpoint: string, options?: ApiOptions) => 
         apiFetch(endpoint, { ...options, method: 'DELETE' }),
