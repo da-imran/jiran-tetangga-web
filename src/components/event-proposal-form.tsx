@@ -29,8 +29,8 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 
 const formSchema = z.object({
-  eventName: z.string().min(5, "Event title is required.").max(100),
-  description: z.string().min(10, "Description is required.").max(500),
+  eventName: z.string().min(1, "Event title is required.").max(100),
+  description: z.string().min(1, "Description is required.").max(500),
   organizerName: z.string().min(2, "Your name is required."),
   organizerEmail: z.string().email("Please enter a valid email address."),
   eventDate: z.any().refine(val => val, { message: "Please select a date for the event." }),
@@ -55,18 +55,29 @@ export function EventProposalForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    const payload = {
+    const inputObj = {
         ...values,
         eventDate: values.eventDate.toDate(getLocalTimeZone()).toISOString(),
     };
     try {
-        await api.post('/events/propose', payload);
-        toast({
+        const response = await api.post('/events', { inputObj });
+        console.log('response?', response);
+        if(response.status !== 200) {
+          toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: "There was a problem submitting your proposal. Please try again.",
+          });
+          form.reset();
+          setIsSubmitting(false);
+        } else {
+          toast({
             title: "Proposal Submitted!",
             description: "Thank you for your submission. An administrator will review your proposal shortly.",
-        });
-        form.reset();
-        // Here you might want to close the dialog, which would require passing a handler from the parent.
+          });
+          form.reset();
+          setIsSubmitting(false);
+        }
     } catch (error: any) {
          toast({
             variant: "destructive",

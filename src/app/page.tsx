@@ -176,7 +176,9 @@ export default function Home() {
         const eventsData = await api.get('/events');
         console.log('Events API data:', eventsData.data);
 
-        const formattedEvents = eventsData.data.map((event: any) => ({
+        const formattedEvents = eventsData.data
+        .filter((event: any) => event.status === 'approved')
+        .map((event: any) => ({
           id: event._id,
           title: event.title,
           date: new Date(event.eventDate),

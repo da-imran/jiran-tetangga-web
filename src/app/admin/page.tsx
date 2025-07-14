@@ -117,7 +117,6 @@ export default function AdminDashboardPage() {
       const itemType = action.itemType;
       let defaultValues = { ...action.data };
        if (itemType === 'Local Event' && action.data.eventDate) {
-        // Convert ISO string back to DateValue
         try {
           defaultValues.eventDate = parseDate(action.data.eventDate.split('T')[0]);
         } catch(e) {
@@ -127,9 +126,9 @@ export default function AdminDashboardPage() {
       }
       form.reset(defaultValues);
     } else if (action?.type === 'add') {
-      form.reset({
-        eventDate: null,
-      });
+      form.reset({});
+    } else if (action?.type === 'delete' && action.data) {
+
     }
   }, [action, form]);
 
@@ -523,9 +522,9 @@ export default function AdminDashboardPage() {
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
                       <SelectItem value="closed">Closed</SelectItem>
-                      <SelectItem value="promo">Promo</SelectItem>
+                      <SelectItem value="maintenance">Maintenance</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -546,103 +545,103 @@ export default function AdminDashboardPage() {
             </div>
           </>
         );
-        case 'Park Status':
-            return (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="name" data-speakable="true">Park Name</Label>
-                  <Input id="name" {...form.register("name")} />
-                  {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message as string}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description" data-speakable="true">Description</Label>
-                  <Textarea id="description" {...form.register("description")} />
-                   {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message as string}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label data-speakable="true">Status</Label>
-                  <Controller
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                         <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                          <SelectItem value="maintenance">Maintenance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {form.formState.errors.status && <p className="text-sm text-destructive">{form.formState.errors.status.message as string}</p>}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="opening" data-speakable="true">Opening Time (HHmm)</Label>
-                        <Input id="opening" {...form.register("openingHours.opening")} />
-                        {form.formState.errors.openingHours?.opening && <p className="text-sm text-destructive">{form.formState.errors.openingHours.opening.message as string}</p>}
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="closing" data-speakable="true">Closing Time (HHmm)</Label>
-                        <Input id="closing" {...form.register("openingHours.closing")} />
-                         {form.formState.errors.openingHours?.closing && <p className="text-sm text-destructive">{form.formState.errors.openingHours.closing.message as string}</p>}
-                    </div>
-                </div>
-              </>
-            );
-        case 'Local Event':
-            return (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="title" data-speakable="true">Event Title</Label>
-                  <Input id="title" {...form.register("title")} />
-                   {form.formState.errors.title && <p className="text-sm text-destructive">{form.formState.errors.title.message as string}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description" data-speakable="true">Description</Label>
-                  <Textarea id="description" {...form.register("description")} />
+      case 'Park Status':
+          return (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="name" data-speakable="true">Park Name</Label>
+                <Input id="name" {...form.register("name")} />
+                {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message as string}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description" data-speakable="true">Description</Label>
+                <Textarea id="description" {...form.register("description")} />
                   {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message as string}</p>}
-                </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="location" data-speakable="true">Location</Label>
-                  <Input id="location" {...form.register("location")} />
-                   {form.formState.errors.location && <p className="text-sm text-destructive">{form.formState.errors.location.message as string}</p>}
-                </div>
+              </div>
+              <div className="space-y-2">
+                <Label data-speakable="true">Status</Label>
+                <Controller
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="open">Open</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {form.formState.errors.status && <p className="text-sm text-destructive">{form.formState.errors.status.message as string}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="opening" data-speakable="true">Opening Time (HHmm)</Label>
+                      <Input id="opening" {...form.register("openingHours.opening")} />
+                      {form.formState.errors.openingHours?.opening && <p className="text-sm text-destructive">{form.formState.errors.openingHours.opening.message as string}</p>}
+                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="closing" data-speakable="true">Closing Time (HHmm)</Label>
+                      <Input id="closing" {...form.register("openingHours.closing")} />
+                        {form.formState.errors.openingHours?.closing && <p className="text-sm text-destructive">{form.formState.errors.openingHours.closing.message as string}</p>}
+                  </div>
+              </div>
+            </>
+          );
+      case 'Local Event':
+          return (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="title" data-speakable="true">Event Title</Label>
+                <Input id="title" {...form.register("title")} />
+                  {form.formState.errors.title && <p className="text-sm text-destructive">{form.formState.errors.title.message as string}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description" data-speakable="true">Description</Label>
+                <Textarea id="description" {...form.register("description")} />
+                {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message as string}</p>}
+              </div>
                 <div className="space-y-2">
-                    <Label data-speakable="true">Event Date</Label>
-                     <Controller
-                        control={form.control}
-                        name="eventDate"
-                        render={({ field }) => (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full justify-start text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? field.value.toString() : <span>Pick a date</span>}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                aria-label="Event date"
-                                value={field.value as DateValue | undefined}
-                                onChange={field.onChange}
-                                minValue={today(getLocalTimeZone())}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        )}
-                      />
-                     {form.formState.errors.eventDate && <p className="text-sm text-destructive">{form.formState.errors.eventDate.message as string}</p>}
-                </div>
-              </>
-            );
+                <Label htmlFor="location" data-speakable="true">Location</Label>
+                <Input id="location" {...form.register("location")} />
+                  {form.formState.errors.location && <p className="text-sm text-destructive">{form.formState.errors.location.message as string}</p>}
+              </div>
+              <div className="space-y-2">
+                  <Label data-speakable="true">Event Date</Label>
+                    <Controller
+                      control={form.control}
+                      name="eventDate"
+                      render={({ field }) => (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {field.value ? field.value.toString() : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              aria-label="Event date"
+                              value={field.value as DateValue | undefined}
+                              onChange={field.onChange}
+                              minValue={today(getLocalTimeZone())}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    />
+                    {form.formState.errors.eventDate && <p className="text-sm text-destructive">{form.formState.errors.eventDate.message as string}</p>}
+              </div>
+            </>
+          );
       default:
         return <p>No form available for this item type.</p>;
     }
@@ -995,12 +994,6 @@ export default function AdminDashboardPage() {
                     onChange={(e) => handleSearch('localEvents', e.target.value)}
                     className="w-full sm:w-auto"
                   />
-                <Button size="sm" className="gap-1" onClick={() => setIsReviewingProposals(true)}>
-                  <Bell className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Review Proposals
-                  </span>
-                </Button>
                 <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Local Event')}>
                   <PlusCircle className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -1127,101 +1120,6 @@ export default function AdminDashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Dialog for reviewing event proposals */}
-      <Dialog open={isReviewingProposals} onOpenChange={setIsReviewingProposals}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle data-speakable="true">Review Event Proposals</DialogTitle>
-            <DialogDescription data-speakable="true">
-              Approve or reject the following event proposals.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-1">
-             <Input
-                placeholder="Search proposals..."
-                value={search.eventProposals}
-                onChange={(e) => handleSearch('eventProposals', e.target.value)}
-                className="w-full mb-4"
-              />
-            <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
-              {loading.eventProposals ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                    <Card key={i}><CardContent className="p-4"><Skeleton className="h-24 w-full" /></CardContent></Card>
-                ))
-               ) : paginatedEventProposals.length > 0 ? paginatedEventProposals.map((proposal) => (
-                <Card key={proposal.id}>
-                  <CardHeader>
-                    <CardTitle data-speakable="true">{proposal.eventName}</CardTitle>
-                    <CardDescription data-speakable="true">Proposed by: {proposal.organizerName} ({proposal.organizerEmail})</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    <p data-speakable="true"><span className="font-semibold">Proposed Date:</span> {new Date(proposal.eventDate).toLocaleDateString()}</p>
-                    <p className="text-muted-foreground" data-speakable="true">{proposal.description}</p>
-                  </CardContent>
-                  <CardFooter className="flex justify-end gap-2">
-                    <Button className="bg-green-600 text-white hover:bg-green-700" onClick={() => handleApprove(proposal.id)}>Approve</Button>
-                    <Button variant="destructive" onClick={() => setProposalToReject(proposal)}>Reject</Button>
-                  </CardFooter>
-                </Card>
-              )) : (
-                <div className="text-center text-muted-foreground py-12">No proposals found.</div>
-              )}
-            </div>
-          </div>
-          <DialogFooter className="flex justify-between items-center pt-4 border-t mt-2">
-               <span className="text-sm text-muted-foreground">
-                Page {currentPage.eventProposals} of {totalEventProposalPages}
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange('eventProposals', currentPage.eventProposals - 1)}
-                  disabled={currentPage.eventProposals <= 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange('eventProposals', currentPage.eventProposals + 1)}
-                  disabled={currentPage.eventProposals >= totalEventProposalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Dialog for rejection reason */}
-      <Dialog open={!!proposalToReject} onOpenChange={() => setProposalToReject(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle data-speakable="true">Reason for Rejection</DialogTitle>
-            <DialogDescription data-speakable="true">
-              Please provide a reason for rejecting the event proposal "{proposalToReject?.eventName}".
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Label htmlFor="rejection-reason" className="sr-only" data-speakable="true">
-              Reason for Rejection
-            </Label>
-            <Textarea
-              id="rejection-reason"
-              placeholder="e.g., Event conflicts with another scheduled activity."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setProposalToReject(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleRejectSubmit}>Confirm Rejection</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
