@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
     const isEdit = type === 'edit';
 
     let payload = { ...values };
-    if (itemType === 'Local Event' && payload.eventDate) {
+    if (itemType === 'Local Event' && payload.eventDate && typeof payload.eventDate.toDate === 'function') {
       payload.eventDate = payload.eventDate.toDate(getLocalTimeZone()).toISOString();
     }
     
@@ -254,27 +254,6 @@ export default function AdminDashboardPage() {
         });
     } finally {
         setIsSubmitting(false);
-    }
-  };
-
-  const handleProposalStatusChange = async (proposalId: string, status: 'approved' | 'rejected') => {
-    setIsSubmitting(true);
-    try {
-      await api.put(`/events/proposals/${proposalId}/status`, { status });
-      toast({
-        title: "Success",
-        description: `Proposal has been ${status}.`
-      });
-      fetchData('events', setLocalEvents, setLoading, 'localEvents');
-      closeDialogs();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Update Failed",
-        description: error.message || "Could not update the proposal status."
-      });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -442,7 +421,7 @@ export default function AdminDashboardPage() {
     if (!action || (action.type !== 'add' && action.type !== 'edit')) return null;
 
     const { itemType, data } = action;
-    const isReadOnly = itemType === 'Local Event' && (data?.status === 'rejected' || data?.status === 'pending');
+    const isReadOnly = itemType === 'Local Event' && data?.status === 'rejected';
 
     switch (itemType) {
       case 'Road Disruption':
@@ -627,7 +606,7 @@ export default function AdminDashboardPage() {
                     control={form.control}
                     name="status"
                     render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange} disabled>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
                         <SelectTrigger className="capitalize">
                           <SelectValue placeholder="Status" />
                         </SelectTrigger>
@@ -1129,11 +1108,7 @@ export default function AdminDashboardPage() {
               {action?.type === 'add' ? 'Add New' : 'Edit'} {action?.itemType}
             </DialogTitle>
              <DialogDescription data-speakable="true">
-              {action?.itemType === 'Local Event' && action?.data?.status === 'rejected'
-                ? 'This event proposal was rejected and is read-only.'
-                : action?.itemType === 'Local Event' && action?.data?.status === 'pending'
-                ? 'Review this event proposal and choose to approve or reject it.'
-                : "Make changes here. Click save when you're done."}
+                Make changes here. Click save when you're done.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={form.handleSubmit(handleFormSubmit)}>
@@ -1141,38 +1116,16 @@ export default function AdminDashboardPage() {
               {renderForm()}
             </div>
              <DialogFooter>
-              {action?.itemType === 'Local Event' && action.data?.status === 'pending' ? (
-                <>
-                  <Button variant="outline" onClick={closeDialogs} type="button">Cancel</Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() => handleProposalStatusChange(action.data._id, 'rejected')}
-                    disabled={isSubmitting}
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    {isSubmitting ? 'Rejecting...' : 'Reject'}
-                  </Button>
-                  <Button
-                    type="button"
-                    className="bg-green-600 hover:bg-green-700"
-                    onClick={() => handleProposalStatusChange(action.data._id, 'approved')}
-                    disabled={isSubmitting}
-                  >
-                    <Check className="mr-2 h-4 w-4" />
-                    {isSubmitting ? 'Approving...' : 'Approve'}
-                  </Button>
-                </>
-              ) : action?.itemType === 'Local Event' && action.data?.status === 'rejected' ? (
-                <Button variant="outline" onClick={closeDialogs} type="button">Close</Button>
-              ) : (
-                <>
-                  <Button variant="outline" onClick={closeDialogs} type="button">Cancel</Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </>
-              )}
+                {action?.itemType === 'Local Event' && action.data?.status === 'rejected' ? (
+                    <Button variant="outline" onClick={closeDialogs} type="button">Close</Button>
+                ) : (
+                    <>
+                    <Button variant="outline" onClick={closeDialogs} type="button">Cancel</Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                    </>
+                )}
             </DialogFooter>
           </form>
         </DialogContent>
@@ -1198,3 +1151,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
