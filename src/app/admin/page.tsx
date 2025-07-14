@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -18,7 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bell, Pencil, PlusCircle, Trash2, ArrowUpDown, ChevronDown, CalendarIcon, Check, X } from "lucide-react";
+import { Bell, Pencil, PlusCircle, Trash2, ArrowUpDown, ChevronDown, CalendarIcon, Check, X, ShieldQuestion } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -103,9 +102,6 @@ interface SortConfig {
 export default function AdminDashboardPage() {
   const { toast } = useToast();
   const [action, setAction] = useState<{ type: 'add' | 'edit' | 'delete', itemType: string, data?: any } | null>(null);
-  const [isReviewingProposals, setIsReviewingProposals] = useState(false);
-  const [proposalToReject, setProposalToReject] = useState<any | null>(null);
-  const [rejectionReason, setRejectionReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm({
@@ -136,7 +132,6 @@ export default function AdminDashboardPage() {
 
   const [roadDisruptions, setRoadDisruptions] = useState<any[]>([]);
   const [localEvents, setLocalEvents] = useState<any[]>([]);
-  const [eventProposals, setEventProposals] = useState<any[]>([]);
   const [shopNotifications, setShopNotifications] = useState<any[]>([]);
   const [parkStatus, setParkStatus] = useState<any[]>([]);
 
@@ -145,7 +140,6 @@ export default function AdminDashboardPage() {
     shopNotifications: true,
     parkStatus: true,
     localEvents: true,
-    eventProposals: true,
   });
 
   const [search, setSearch] = useState({
@@ -153,7 +147,6 @@ export default function AdminDashboardPage() {
     shopNotifications: "",
     parkStatus: "",
     localEvents: "",
-    eventProposals: "",
   });
 
   const [currentPage, setCurrentPage] = useState({
@@ -161,7 +154,6 @@ export default function AdminDashboardPage() {
     shopNotifications: 1,
     parkStatus: 1,
     localEvents: 1,
-    eventProposals: 1,
   });
 
   const [sortConfig, setSortConfig] = useState<{ [key: string]: SortConfig }>({
@@ -169,12 +161,12 @@ export default function AdminDashboardPage() {
     shopNotifications: { key: 'name', direction: 'ascending' },
     parkStatus: { key: 'name', direction: 'ascending' },
     localEvents: { key: 'title', direction: 'ascending' },
-    eventProposals: { key: 'eventName', direction: 'ascending' },
   });
 
   const [filters, setFilters] = useState<{ [key: string]: string[] }>({
     shopNotifications: [],
     parkStatus: [],
+    localEvents: [],
   });
 
   const fetchData = async (endpoint: string, setData: Function, setLoadingState: Function, dataKey: string) => {
@@ -187,8 +179,6 @@ export default function AdminDashboardPage() {
             processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
         } else if (dataKey === 'localEvents') {
             processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) }));
-        } else if (dataKey === 'eventProposals') {
-             processedData = result.data.map((item: any) => ({ ...item, eventDate: new Date(item.eventDate) }));
         }
 
         setData(processedData);
@@ -210,7 +200,6 @@ export default function AdminDashboardPage() {
     fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
     fetchData('parks', setParkStatus, setLoading, 'parkStatus');
     fetchData('events', setLocalEvents, setLoading, 'localEvents');
-    fetchData('events/proposals', setEventProposals, setLoading, 'eventProposals');
   }, []);
   
   const closeDialogs = () => {
@@ -268,23 +257,23 @@ export default function AdminDashboardPage() {
   };
 
   const handleProposalStatusChange = async (proposalId: string, status: 'approved' | 'rejected') => {
+    setIsSubmitting(true);
     try {
       await api.put(`/events/proposals/${proposalId}/status`, { status });
       toast({
         title: "Success",
         description: `Proposal has been ${status}.`
       });
-      fetchData('events/proposals', setEventProposals, setLoading, 'eventProposals');
-      // Also refresh approved events list
-      if (status === 'approved') {
-        fetchData('events', setLocalEvents, setLoading, 'localEvents');
-      }
+      fetchData('events', setLocalEvents, setLoading, 'localEvents');
+      closeDialogs();
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Update Failed",
         description: error.message || "Could not update the proposal status."
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -420,7 +409,13 @@ export default function AdminDashboardPage() {
   const totalParkStatusPages = Math.ceil(filteredParkStatus.length / ITEMS_PER_PAGE);
 
   const filteredLocalEvents = useMemo(() => {
-    let items = localEvents.filter(item =>
+    let items = [...localEvents];
+
+    if (filters.localEvents.length > 0) {
+      items = items.filter(item => filters.localEvents.includes(item.status));
+    }
+
+    items = items.filter(item =>
       item.title.toLowerCase().includes(search.localEvents.toLowerCase())
     );
 
@@ -435,41 +430,18 @@ export default function AdminDashboardPage() {
     });
 
     return items;
-  }, [search.localEvents, sortConfig.localEvents, localEvents]);
+  }, [search.localEvents, sortConfig.localEvents, localEvents, filters.localEvents]);
   const paginatedLocalEvents = useMemo(() => {
     const startIndex = (currentPage.localEvents - 1) * ITEMS_PER_PAGE;
     return filteredLocalEvents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredLocalEvents, currentPage.localEvents]);
   const totalLocalEventPages = Math.ceil(filteredLocalEvents.length / ITEMS_PER_PAGE);
 
-  const filteredEventProposals = useMemo(() => {
-    let items = eventProposals.filter(item =>
-      Object.values(item).some(val =>
-        String(val).toLowerCase().includes(search.eventProposals.toLowerCase())
-      )
-    );
-
-    const { key, direction } = sortConfig.eventProposals;
-    items.sort((a, b) => {
-      const aValue = a[key as keyof typeof a];
-      const bValue = b[key as keyof typeof b];
-      if (aValue < bValue) return direction === 'ascending' ? -1 : 1;
-      if (aValue > bValue) return direction === 'ascending' ? 1 : -1;
-      return 0;
-    });
-
-    return items;
-  }, [search.eventProposals, sortConfig.eventProposals, eventProposals]);
-  const paginatedEventProposals = useMemo(() => {
-    const startIndex = (currentPage.eventProposals - 1) * ITEMS_PER_PAGE;
-    return filteredEventProposals.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredEventProposals, currentPage.eventProposals]);
-  const totalEventProposalPages = Math.ceil(filteredEventProposals.length / ITEMS_PER_PAGE);
-  
   const renderForm = () => {
     if (!action || (action.type !== 'add' && action.type !== 'edit')) return null;
 
-    const { itemType } = action;
+    const { itemType, data } = action;
+    const isReadOnly = itemType === 'Local Event' && data?.status === 'rejected';
 
     switch (itemType) {
       case 'Road Disruption':
@@ -602,17 +574,17 @@ export default function AdminDashboardPage() {
             <>
               <div className="space-y-2">
                 <Label htmlFor="title" data-speakable="true">Event Title</Label>
-                <Input id="title" {...form.register("title")} />
+                <Input id="title" {...form.register("title")} readOnly={isReadOnly}/>
                   {form.formState.errors.title && <p className="text-sm text-destructive">{form.formState.errors.title.message as string}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description" data-speakable="true">Description</Label>
-                <Textarea id="description" {...form.register("description")} />
+                <Textarea id="description" {...form.register("description")} readOnly={isReadOnly}/>
                 {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message as string}</p>}
               </div>
                 <div className="space-y-2">
                 <Label htmlFor="location" data-speakable="true">Location</Label>
-                <Input id="location" {...form.register("location")} />
+                <Input id="location" {...form.register("location")} readOnly={isReadOnly}/>
                   {form.formState.errors.location && <p className="text-sm text-destructive">{form.formState.errors.location.message as string}</p>}
               </div>
               <div className="space-y-2">
@@ -622,7 +594,7 @@ export default function AdminDashboardPage() {
                       name="eventDate"
                       render={({ field }) => (
                         <Popover>
-                          <PopoverTrigger asChild>
+                          <PopoverTrigger asChild disabled={isReadOnly}>
                             <Button
                               variant={"outline"}
                               className={cn(
@@ -1001,6 +973,25 @@ export default function AdminDashboardPage() {
                     onChange={(e) => handleSearch('localEvents', e.target.value)}
                     className="w-full sm:w-auto"
                   />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="ml-auto">
+                        Status <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {['approved', 'pending', 'rejected'].map((status) => (
+                        <DropdownMenuCheckboxItem
+                          key={status}
+                          className="capitalize"
+                          checked={filters.localEvents.includes(status)}
+                          onCheckedChange={() => handleFilterChange('localEvents', status)}
+                        >
+                          {status}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Local Event')}>
                   <PlusCircle className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -1031,16 +1022,39 @@ export default function AdminDashboardPage() {
                          <SortArrow table="localEvents" columnKey="location" />
                        </Button>
                     </TableHead>
+                     <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('localEvents', 'status')} data-speakable="true">
+                         Status
+                         <SortArrow table="localEvents" columnKey="status" />
+                       </Button>
+                    </TableHead>
                     <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading.localEvents ? renderSkeleton(4) :
+                  {loading.localEvents ? renderSkeleton(5) :
                   paginatedLocalEvents.length > 0 ? paginatedLocalEvents.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
                       <TableCell data-speakable="true">{new Date(item.date).toLocaleDateString()}</TableCell>
                       <TableCell data-speakable="true">{item.location}</TableCell>
+                       <TableCell>
+                        <Badge
+                          variant={
+                            item.status === 'approved' ? 'default' :
+                            item.status === 'rejected' ? 'destructive' :
+                            'secondary'
+                          }
+                          className={cn(
+                            'capitalize',
+                            item.status === 'approved' && 'bg-green-600',
+                            item.status === 'pending' && 'bg-yellow-500',
+                          )}
+                          data-speakable="true"
+                        >
+                          {item.status}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Local Event', item)}>
                           <Pencil className="h-4 w-4" />
@@ -1052,7 +1066,7 @@ export default function AdminDashboardPage() {
                     </TableRow>
                   )) : (
                      <TableRow>
-                        <TableCell colSpan={4} className="text-center h-24">No results found.</TableCell>
+                        <TableCell colSpan={5} className="text-center h-24">No results found.</TableCell>
                      </TableRow>
                   )}
                 </TableBody>
@@ -1082,91 +1096,6 @@ export default function AdminDashboardPage() {
               </div>
             </CardFooter>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle data-speakable="true">Event Proposals</CardTitle>
-              <CardDescription data-speakable="true">Review and approve or reject new event proposals.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead data-speakable="true">Event Name</TableHead>
-                    <TableHead data-speakable="true">Organizer</TableHead>
-                    <TableHead data-speakable="true">Date</TableHead>
-                    <TableHead data-speakable="true">Status</TableHead>
-                    <TableHead className="text-right" data-speakable="true">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading.eventProposals ? renderSkeleton(5) : 
-                  paginatedEventProposals.length > 0 ? paginatedEventProposals.map((proposal) => (
-                    <TableRow key={proposal._id}>
-                      <TableCell className="font-medium" data-speakable="true">{proposal.eventName}</TableCell>
-                      <TableCell data-speakable="true">{proposal.organizerName}</TableCell>
-                      <TableCell data-speakable="true">{new Date(proposal.eventDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            proposal.status === 'approved' ? 'default' :
-                            proposal.status === 'rejected' ? 'destructive' :
-                            'secondary'
-                          }
-                          className={cn(
-                            proposal.status === 'approved' && 'bg-green-600',
-                            proposal.status === 'pending' && 'bg-yellow-500',
-                          )}
-                          data-speakable="true"
-                        >
-                          {proposal.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {proposal.status === 'pending' && (
-                          <>
-                            <Button variant="ghost" size="icon" onClick={() => handleProposalStatusChange(proposal._id, 'approved')}>
-                              <Check className="h-4 w-4 text-green-600" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleProposalStatusChange(proposal._id, 'rejected')}>
-                              <X className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  )) : (
-                     <TableRow>
-                        <TableCell colSpan={5} className="text-center h-24">No pending proposals.</TableCell>
-                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-             <CardFooter className="flex justify-between items-center">
-               <span className="text-sm text-muted-foreground">
-                Page {currentPage.eventProposals} of {totalEventProposalPages}
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange('eventProposals', currentPage.eventProposals - 1)}
-                  disabled={currentPage.eventProposals <= 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange('eventProposals', currentPage.eventProposals + 1)}
-                  disabled={currentPage.eventProposals >= totalEventProposalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            </CardFooter>
-          </Card>
         </div>
       </main>
       
@@ -1177,19 +1106,51 @@ export default function AdminDashboardPage() {
             <DialogTitle data-speakable="true">
               {action?.type === 'add' ? 'Add New' : 'Edit'} {action?.itemType}
             </DialogTitle>
-            <DialogDescription data-speakable="true">
-              Make changes here. Click save when you're done.
+             <DialogDescription data-speakable="true">
+              {action?.itemType === 'Local Event' && action?.data?.status === 'rejected'
+                ? 'This event proposal was rejected and is read-only.'
+                : action?.itemType === 'Local Event' && action?.data?.status === 'pending'
+                ? 'Review this event proposal and choose to approve or reject it.'
+                : "Make changes here. Click save when you're done."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={form.handleSubmit(handleFormSubmit)}>
             <div className="grid gap-4 py-4">
               {renderForm()}
             </div>
-            <DialogFooter>
-                <Button variant="outline" onClick={closeDialogs} type="button">Cancel</Button>
-                <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </Button>
+             <DialogFooter>
+              {action?.itemType === 'Local Event' && action.data?.status === 'pending' ? (
+                <>
+                  <Button variant="outline" onClick={closeDialogs} type="button">Cancel</Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => handleProposalStatusChange(action.data._id, 'rejected')}
+                    disabled={isSubmitting}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    {isSubmitting ? 'Rejecting...' : 'Reject'}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => handleProposalStatusChange(action.data._id, 'approved')}
+                    disabled={isSubmitting}
+                  >
+                    <Check className="mr-2 h-4 w-4" />
+                    {isSubmitting ? 'Approving...' : 'Approve'}
+                  </Button>
+                </>
+              ) : action?.itemType === 'Local Event' && action.data?.status === 'rejected' ? (
+                <Button variant="outline" onClick={closeDialogs} type="button">Close</Button>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={closeDialogs} type="button">Cancel</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>
@@ -1215,3 +1176,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
