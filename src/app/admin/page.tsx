@@ -82,6 +82,7 @@ const localEventSchema = z.object({
   description: z.string().min(10, "Description is required."),
   location: z.string().min(3, "Location is required."),
   eventDate: z.any().refine(val => val, { message: "Event date is required."}),
+  status: z.string().optional(),
 });
 
 const formSchemas = {
@@ -441,7 +442,7 @@ export default function AdminDashboardPage() {
     if (!action || (action.type !== 'add' && action.type !== 'edit')) return null;
 
     const { itemType, data } = action;
-    const isReadOnly = itemType === 'Local Event' && data?.status === 'rejected';
+    const isReadOnly = itemType === 'Local Event' && (data?.status === 'rejected' || data?.status === 'pending');
 
     switch (itemType) {
       case 'Road Disruption':
@@ -619,6 +620,12 @@ export default function AdminDashboardPage() {
                     />
                     {form.formState.errors.eventDate && <p className="text-sm text-destructive">{form.formState.errors.eventDate.message as string}</p>}
               </div>
+              {data?.status && (
+                <div className="space-y-2">
+                  <Label data-speakable="true">Status</Label>
+                  <Input readOnly value={data.status} className="capitalize" />
+                </div>
+              )}
             </>
           );
       default:
