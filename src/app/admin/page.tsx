@@ -623,7 +623,22 @@ export default function AdminDashboardPage() {
               {data?.status && (
                 <div className="space-y-2">
                   <Label data-speakable="true">Status</Label>
-                  <Input readOnly value={data.status} className="capitalize" />
+                  <Controller
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange} disabled>
+                        <SelectTrigger className="capitalize">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               )}
             </>
@@ -1183,5 +1198,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
