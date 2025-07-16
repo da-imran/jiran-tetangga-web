@@ -53,14 +53,14 @@ import { DateValue, parseDate, getLocalTimeZone, today } from "@internationalize
 // Schemas for form validation
 const roadDisruptionSchema = z.object({
   title: z.string().min(5, "Title is required."),
-  description: z.string().min(10, "Description is required."),
-  category: z.string().min(1, "Please select a category."),
+  description: z.string().min(2, "Description is required."),
+  status: z.enum(["active",'inactive']),
 });
 
 const shopNotificationSchema = z.object({
   name: z.string().min(3, "Shop name is required."),
-  description: z.string().min(10, "Description is required."),
-  status: z.enum(["new", "closed", "promo"]),
+  description: z.string().min(2, "Description is required."),
+  status: z.enum(["open", "closed", "maintenance"]),
   openingHours: z.object({
     opening: z.string().regex(/^\d{4}$/, "Opening time must be in HHmm format."),
     closing: z.string().regex(/^\d{4}$/, "Closing time must be in HHmm format."),
@@ -69,7 +69,7 @@ const shopNotificationSchema = z.object({
 
 const parkStatusSchema = z.object({
   name: z.string().min(3, "Park name is required."),
-  description: z.string().min(10, "Description is required."),
+  description: z.string().min(2, "Description is required."),
   status: z.enum(["open", "closed", "maintenance"]),
    openingHours: z.object({
     opening: z.string().regex(/^\d{4}$/, "Opening time must be in HHmm format."),
@@ -239,23 +239,11 @@ export default function AdminDashboardPage() {
     let url = `/${endpoint}`;
     const method = isEdit ? 'patch' : 'post';
     
-
-    
-    if (isEdit) {
-      if (itemType === 'Local Event') {
-        // For Local Events, add eventId as a query parameter
-        options.params = { eventId: data._id };
-      } else if (itemType === 'Park Status') {
-        options.params = { park: data._id };
-      } else if (itemType === 'Shop Notification') {
-        options.params = { shop: data._id };
-      } else if (itemType === 'Road Disruption') {
-        options.params = { disruption: data._id };
-      }
+    if (isEdit && data?._id) {
+      url = `${url}/${data._id}`;
     }
     try {
         const response = await api[method](url, options.body, { params: options.params }); // Pass params here
-        console.log('response here?', response);
         toast({
             title: "Success!",
             description: `${itemType} has been successfully ${isEdit ? 'updated' : 'added'}.`,
@@ -280,6 +268,57 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!action || !action.data) return;
+
+    setIsSubmitting(true);
+    const { itemType, data } = action;
+
+    const endpointMap: { [key: string]: string } = {
+        'Road Disruption': 'disruptions',
+        'Shop Notification': 'shops',
+        'Park Status': 'parks',
+        'Local Event': 'events',
+    };
+
+    type ApiOptions = Omit<RequestInit, 'body'> & {
+      params?: Record<string, any>;
+      pathParams?: Record<string, string | number>;
+      body?: any;
+    };
+
+    const endpoint = endpointMap[itemType];
+
+    // Determine the URL and params based on item type
+    const url = `/${endpoint}/${data._id}`;
+    const options: ApiOptions = { method: 'delete' };
+
+    try {
+        await api.delete(url, { params: options.params });
+
+        toast({
+            title: "Success!",
+            description: `${itemType} has been successfully deleted.`,
+        });
+
+        // Refetch data after successful deletion
+        if (itemType === 'Road Disruption') fetchData('disruptions', setRoadDisruptions, setLoading, 'roadDisruptions');
+        if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
+        if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, 'parkStatus');
+        if (itemType === 'Local Event') fetchData('events', setLocalEvents, setLoading, 'localEvents');
+
+        closeDialogs(); // Close the dialog after deletion
+    } catch (error: any) {
+        console.error(`Error deleting ${itemType}:`, error);
+        toast({
+            variant: "destructive",
+            title: "An error occurred.",
+            description: error.message || `Could not delete the ${itemType}. Please try again.`,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
 
   const handleSort = (table: keyof typeof sortConfig, key: string) => {
     setSortConfig(prev => {
@@ -349,10 +388,12 @@ export default function AdminDashboardPage() {
 
     return items;
   }, [search.roadDisruptions, sortConfig.roadDisruptions, roadDisruptions]);
+
   const paginatedRoadDisruptions = useMemo(() => {
     const startIndex = (currentPage.roadDisruptions - 1) * ITEMS_PER_PAGE;
     return filteredRoadDisruptions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredRoadDisruptions, currentPage.roadDisruptions]);
+
   const totalRoadDisruptionPages = Math.ceil(filteredRoadDisruptions.length / ITEMS_PER_PAGE);
 
   const filteredShopNotifications = useMemo(() => {
@@ -378,10 +419,12 @@ export default function AdminDashboardPage() {
 
     return items;
   }, [search.shopNotifications, sortConfig.shopNotifications, filters.shopNotifications, shopNotifications]);
+  
   const paginatedShopNotifications = useMemo(() => {
     const startIndex = (currentPage.shopNotifications - 1) * ITEMS_PER_PAGE;
     return filteredShopNotifications.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredShopNotifications, currentPage.shopNotifications]);
+  
   const totalShopNotificationPages = Math.ceil(filteredShopNotifications.length / ITEMS_PER_PAGE);
   
   const filteredParkStatus = useMemo(() => {
@@ -405,10 +448,12 @@ export default function AdminDashboardPage() {
 
     return items;
   }, [search.parkStatus, sortConfig.parkStatus, filters.parkStatus, parkStatus]);
+  
   const paginatedParkStatus = useMemo(() => {
     const startIndex = (currentPage.parkStatus - 1) * ITEMS_PER_PAGE;
     return filteredParkStatus.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredParkStatus, currentPage.parkStatus]);
+  
   const totalParkStatusPages = Math.ceil(filteredParkStatus.length / ITEMS_PER_PAGE);
 
   const filteredLocalEvents = useMemo(() => {
@@ -434,10 +479,12 @@ export default function AdminDashboardPage() {
 
     return items;
   }, [search.localEvents, sortConfig.localEvents, localEvents, filters.localEvents]);
+  
   const paginatedLocalEvents = useMemo(() => {
     const startIndex = (currentPage.localEvents - 1) * ITEMS_PER_PAGE;
     return filteredLocalEvents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredLocalEvents, currentPage.localEvents]);
+  
   const totalLocalEventPages = Math.ceil(filteredLocalEvents.length / ITEMS_PER_PAGE);
 
   const renderForm = () => {
@@ -460,25 +507,22 @@ export default function AdminDashboardPage() {
               <Textarea id="description" {...form.register("description")} />
               {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message as string}</p>}
             </div>
-             <div className="space-y-2">
-                <Label data-speakable="true">Category</Label>
-                <Controller
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="road-damage">Road Damage</SelectItem>
-                            <SelectItem value="traffic-congestion">Traffic Congestion</SelectItem>
-                            <SelectItem value="road-closure">Road Closure</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    )}
-                />
-                 {form.formState.errors.category && <p className="text-sm text-destructive">{form.formState.errors.category.message as string}</p>}
+            <div className="space-y-2">
+              <Label data-speakable="true">Status</Label>
+              <Controller
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {form.formState.errors.status && <p className="text-sm text-destructive">{form.formState.errors.status.message as string}</p>}
             </div>
           </>
         );
@@ -650,7 +694,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <AppHeader />
@@ -695,6 +738,12 @@ export default function AdminDashboardPage() {
                         <SortArrow table="roadDisruptions" columnKey="date" />
                       </Button>
                     </TableHead>
+                    <TableHead>
+                       <Button variant="ghost" onClick={() => handleSort('roadDisruptions', 'status')} data-speakable="true">
+                         Status
+                         <SortArrow table="roadDisruptions" columnKey="status" />
+                       </Button>
+                    </TableHead>
                     <TableHead className="text-right" data-speakable="true">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -704,6 +753,11 @@ export default function AdminDashboardPage() {
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
                       <TableCell data-speakable="true">{formatDistanceToNow(item.date, { addSuffix: true })}</TableCell>
+                      <TableCell>
+                        <Badge data-speakable="true" variant={item.status === 'active' ? 'default' : 'destructive' } className={item.status === 'active' ? 'bg-green-600' :''}>
+                          {item.status}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Road Disruption', item)}>
                           <Pencil className="h-4 w-4" />
@@ -768,7 +822,7 @@ export default function AdminDashboardPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {['new', 'closed', 'promo'].map((status) => (
+                    {['open', 'closed', 'maintenance'].map((status) => (
                       <DropdownMenuCheckboxItem
                         key={status}
                         className="capitalize"
@@ -820,7 +874,7 @@ export default function AdminDashboardPage() {
                       <TableCell className="font-medium" data-speakable="true">{item.name}</TableCell>
                       <TableCell data-speakable="true">{item.description}</TableCell>
                       <TableCell>
-                        <Badge data-speakable="true" variant={item.status === 'new' ? 'default' : item.status === 'promo' ? 'secondary' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : item.status === 'promo' ? 'bg-blue-500 text-white' : ''}>
+                        <Badge data-speakable="true" variant={item.status === 'open' ? 'default' : item.status === 'maintenance' ? 'secondary' : 'destructive'} className={item.status === 'open' ? 'bg-green-600' : item.status === 'maintenance' ? 'bg-yellow-500' : ''}>
                           {item.status}
                         </Badge>
                       </TableCell>
@@ -1165,7 +1219,7 @@ export default function AdminDashboardPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={closeDialogs}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={closeDialogs} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
