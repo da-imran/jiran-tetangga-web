@@ -90,7 +90,7 @@ export default function Home() {
         console.log('Disruptions API data:', disruptionsData.data);
 
         const formattedDisruptions = disruptionsData.data
-        .filter((post: any) => post.status === true)
+        .filter((post: any) => post.status === 'active')
         .map((post: any) => ({
           id: post._id,
           title: post.title,
@@ -269,20 +269,21 @@ export default function Home() {
               "Here are all the recent road disruptions from the past 7 days.",
               <ul className="space-y-4">
                 {loadingDisruptions ? (
-                  <div className="space-y-4">
+                   <div className="space-y-4">
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                   </div>
-                ) : roadDisruptions.length > 0 ? (
-                  roadDisruptions.map((disruption: RoadDisruption) => (
-                    <li key={disruption.id} className="flex items-start justify-between rounded-md border p-4" data-speakable="true">
-                        <span className="text-sm font-medium">{disruption.description}</span>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(disruption.date).toLocaleDateString()}</span>
-                    </li>
-                  ))
-                ) : (
-                  <p data-speakable="true">No available data.</p>
+                ) : roadDisruptions.length > 0 ? (roadDisruptions.map((disruption) => (
+                  <li key={disruption.id} className="flex flex-col rounded-md border p-4" data-speakable="true">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">{disruption.title}</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(disruption.date).toLocaleDateString()}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{disruption.description}</span>
+                  </li>
+                ))) : (
+                   <p data-speakable="true">No available data.</p>
                 )}
               </ul>
             )}
@@ -311,26 +312,29 @@ export default function Home() {
                   />
                 </PopoverContent>
               </Popover>
-              <ul className="space-y-4 rounded-md bg-destructive/10 p-4 min-h-[100px]">
-                {loadingDisruptions ? (
-                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-5/6" />
-                    <Skeleton className="h-4 w-full" />
-                  </div>
-                ) : filteredRoadDisruptions.length > 0 ? (
-                  filteredRoadDisruptions.map((disruption: RoadDisruption) => (
-                    <li key={disruption.id} className="flex items-start justify-between" data-speakable="true">
-                        <span className="text-sm font-medium">{disruption.title}</span>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDistanceToNow(disruption.date, { addSuffix: true })}
-                        </span>
-                    </li>
-                  ))
-                ) : (
-                  <p data-speakable="true">No disruptions reported for this day.</p>
-                )}
-              </ul>
+            <ul className="space-y-4 rounded-md bg-destructive/10 p-4 min-h-[100px]">
+              {loadingDisruptions ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ) : filteredRoadDisruptions.length > 0 ? (
+                filteredRoadDisruptions.map((disruption: RoadDisruption) => (
+                  <li key={disruption.id} className="space-y-1" data-speakable="true">
+                    <div className="flex items-start justify-between">
+                      <span className="text-sm font-medium">{disruption.title}</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDistanceToNow(disruption.date, { addSuffix: true })}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{disruption.description}</span>
+                  </li>
+                ))
+              ) : (
+                <p data-speakable="true">No disruptions reported for this day.</p>
+              )}
+            </ul>
             </div>
           </DashboardCard>
 
@@ -349,16 +353,35 @@ export default function Home() {
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                   </div>
-                ) : shopNotifications.length > 0 ? (shopNotifications.map((item) => (
-                  <li key={item.id} className="flex flex-col rounded-md border p-4" data-speakable="true">
+                ) : shopNotifications.length > 0 ? (shopNotifications.map((shop) => (
+                  <li key={shop.id} className="flex flex-col rounded-md border p-4" data-speakable="true">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">{item.name}</span>
-                      <span className="text-sm">{item.opening.toString()} - {item.closing.toString()}</span>
-                        <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
-                          {item.status}
+                      <span className="text-sm">{shop.name}</span>
+                        <Badge 
+                          variant={
+                            shop.status === 'open'
+                              ? 'default'
+                              : shop.status === 'maintenance'
+                              ? 'secondary'
+                              : 'outline' // For 'closed' or others
+                          }
+                          className={
+                            shop.status === 'open'
+                              ? 'bg-green-600'
+                              : shop.status === 'maintenance'
+                              ? 'bg-yellow-500'
+                              : 'bg-red-600'
+                          }>
+                          {shop.status}
                         </Badge>
                     </div>
-                    <span className="text-xs text-muted-foreground">{item.description}</span>
+                    <span className="mt-1 flex items-center gap-2 text-sm">
+                      <Clock className="w-4 text-muted-foreground" />
+                      {shop.opening === '12:00 AM' && shop.closing === '12:00 AM'
+                      ? '24 Hours'
+                      : `${shop.opening} to ${shop.closing}`}
+                    </span> 
+                    <span className="text-xs text-muted-foreground">{shop.description}</span>
                   </li>
                 ))) : (
                    <p data-speakable="true">No available data.</p>
@@ -371,21 +394,39 @@ export default function Home() {
                <Skeleton className="h-4 w-full" />
              </div>) : shopNotifications.length > 0 ? (
              <ul className="space-y-4">
-              {shopNotifications.slice(0, 3).map((item) => (
-                <li key={item.id} className="flex flex-col" data-speakable="true">
+              {shopNotifications.slice(0, 3).map((shop) => (
+                <li key={shop.id} className="flex flex-col" data-speakable="true">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{item.name}</span>
-                    <span className="text-sm">{item.opening.toString()} to {item.closing.toString()}</span>
+                    <span className="text-sm font-medium">{shop.name}</span>
                     <div className="flex items-center gap-2">
-                      <Badge variant={item.status === 'new' ? 'default' : 'destructive'} className={item.status === 'new' ? 'bg-green-600' : ''}>
-                        {item.status}
+                      <Badge variant={
+                            shop.status === 'open'
+                              ? 'default'
+                              : shop.status === 'maintenance'
+                              ? 'secondary'
+                              : 'outline' // For 'closed' or others
+                          }
+                          className={
+                            shop.status === 'open'
+                              ? 'bg-green-600'
+                              : shop.status === 'maintenance'
+                              ? 'bg-yellow-500'
+                              : 'bg-red-600'
+                          }>
+                        {shop.status}
                       </Badge>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewImage(item.image, item.name, item.hint)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewImage(shop.image, shop.name, shop.hint)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                  <span className="text-xs text-muted-foreground">{item.description}</span>
+                  <span className="mt-1 flex items-center gap-2 text-sm">
+                    <Clock className="w-4 text-muted-foreground" />
+                    {shop.opening === '12:00 AM' && shop.closing === '12:00 AM'
+                    ? '24 Hours'
+                    : `${shop.opening} to ${shop.closing}`}
+                  </span> 
+                  <span className="text-xs text-muted-foreground">{shop.description}</span>
                 </li>
               ))}
             </ul>
