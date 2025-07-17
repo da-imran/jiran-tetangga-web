@@ -1,6 +1,6 @@
-
 "use client";
 
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -25,17 +25,19 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   category: z.string().min(1, { message: "Please select a category." }),
   location: z.string().min(5, "Location details are required.").max(100),
-  description: z.string().min(10, "Description is required.").max(250),
+  description: z.string().min(5, "Description is required.").max(250),
   photo: z.any().optional(),
 });
 
 export function IssueReportForm() {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,13 +49,26 @@ export function IssueReportForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: "Report Submitted!",
-      description: "Thank you for your submission. Our administrators will review it shortly.",
-    });
-    // Here you would typically handle the form submission, e.g., send data to a server.
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
+    const { photo, ...payload } = values;
+
+    try {
+      await api.post('/reports', payload);
+      toast({
+        title: "Report Submitted!",
+        description: "Thank you for your submission. Our administrators will review it shortly.",
+      });
+      form.reset();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: error.message || "There was a problem submitting your report. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -85,11 +100,10 @@ export function IssueReportForm() {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="road-damage">Road Damage</SelectItem>
+                  <SelectItem value="road-disruption">Road Disruption</SelectItem>
                   <SelectItem value="park-issue">Park Issue</SelectItem>
-                  <SelectItem value="public-nuisance">Public Nuisance</SelectItem>
-                  <SelectItem value="waste-management">Waste Management</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="shop-issue">Shop Issue</SelectItem>
+                  <SelectItem value="local-event">Event Issue</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -142,7 +156,9 @@ export function IssueReportForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">Submit Report</Button>
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? 'Submitting...' : 'Submit Report'}
+        </Button>
       </form>
     </Form>
   );
