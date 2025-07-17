@@ -83,7 +83,7 @@ const localEventSchema = z.object({
   description: z.string().min(2, "Description is required."),
   location: z.string().min(3, "Location is required."),
   eventDate: z.any().refine(val => val, { message: "Event date is required."}),
-  status: z.string().optional(),
+  status: z.enum(['pending', 'approved', 'rejected']),
 });
 
 const reportSchema = z.object({
@@ -172,7 +172,7 @@ export default function AdminDashboardPage() {
     shopNotifications: { key: 'name', direction: 'ascending' },
     parkStatus: { key: 'name', direction: 'ascending' },
     localEvents: { key: 'title', direction: 'ascending' },
-    reports: { key: 'date', direction: 'descending' },
+    reports: { key: 'reportedAt', direction: 'descending' },
   });
 
   const [filters, setFilters] = useState<{ [key: string]: string[] }>({
@@ -188,8 +188,10 @@ export default function AdminDashboardPage() {
         const result = await api.get(`/${endpoint}`);
         let processedData = result.data;
 
-        if (dataKey === 'roadDisruptions' || dataKey === 'reports') {
+        if (dataKey === 'roadDisruptions') {
             processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
+        } else if (dataKey === 'reports') {
+            processedData = result.data.map((item: any) => ({ ...item, reportedAt: new Date(item.reportedAt) }));
         } else if (dataKey === 'localEvents') {
             processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) }));
         }
@@ -716,8 +718,7 @@ export default function AdminDashboardPage() {
                     />
                     {form.formState.errors.eventDate && <p className="text-sm text-destructive">{form.formState.errors.eventDate.message as string}</p>}
               </div>
-              {data?.status && (
-                <div className="space-y-2">
+               <div className="space-y-2">
                   <Label data-speakable="true">Status</Label>
                   <Controller
                     control={form.control}
@@ -736,7 +737,6 @@ export default function AdminDashboardPage() {
                     )}
                   />
                 </div>
-              )}
             </>
           );
       case 'Report':
@@ -1315,9 +1315,9 @@ export default function AdminDashboardPage() {
                       </Button>
                     </TableHead>
                     <TableHead>
-                      <Button variant="ghost" onClick={() => handleSort('reports', 'date')}>
+                      <Button variant="ghost" onClick={() => handleSort('reports', 'reportedAt')}>
                         Date
-                        <SortArrow table="reports" columnKey="date" />
+                        <SortArrow table="reports" columnKey="reportedAt" />
                       </Button>
                     </TableHead>
                     <TableHead>
@@ -1335,7 +1335,7 @@ export default function AdminDashboardPage() {
                     <TableRow key={item._id}>
                       <TableCell className="font-medium capitalize">{item.category.replace(/-/g, ' ')}</TableCell>
                       <TableCell>{item.location}</TableCell>
-                      <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(item.reportedAt).toLocaleDateString()}</TableCell>
                       <TableCell>
                          <Badge
                           variant={
@@ -1441,7 +1441,7 @@ export default function AdminDashboardPage() {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={closeDialogs}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {isSubmitting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
