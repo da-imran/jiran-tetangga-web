@@ -541,7 +541,7 @@ export default function AdminDashboardPage() {
     if (!action || (action.type !== 'add' && action.type !== 'edit')) return null;
 
     const { itemType, data } = action;
-    const isReadOnly = itemType === 'Local Event' && data?.status === 'rejected';
+    const isReadOnly = (itemType === 'Local Event' && data?.status === 'rejected') || (itemType === 'Report' && data?.status === 'rejected');
 
     switch (itemType) {
       case 'Road Disruption':
@@ -744,15 +744,15 @@ export default function AdminDashboardPage() {
           <>
             <div className="space-y-2">
               <Label data-speakable="true">Category</Label>
-              <Input readOnly defaultValue={data.category} />
+              <Input readOnly defaultValue={data.category} disabled={isReadOnly}/>
             </div>
             <div className="space-y-2">
               <Label data-speakable="true">Location</Label>
-              <Input readOnly defaultValue={data.location} />
+              <Input readOnly defaultValue={data.location} disabled={isReadOnly}/>
             </div>
             <div className="space-y-2">
               <Label data-speakable="true">Description</Label>
-              <Textarea readOnly defaultValue={data.description} />
+              <Textarea readOnly defaultValue={data.description} disabled={isReadOnly}/>
             </div>
             <div className="space-y-2">
               <Label data-speakable="true">Status</Label>
@@ -760,7 +760,7 @@ export default function AdminDashboardPage() {
                 control={form.control}
                 name="status"
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
                     <SelectTrigger>
                       <SelectValue placeholder="Update status" />
                     </SelectTrigger>
@@ -1414,7 +1414,7 @@ export default function AdminDashboardPage() {
               {renderForm()}
             </div>
              <DialogFooter>
-                {action?.itemType === 'Local Event' && action.data?.status === 'rejected' ? (
+                {(action?.itemType === 'Local Event' && action.data?.status === 'rejected') || (action?.itemType === 'Report' && action.data?.status === 'rejected') ? (
                     <Button variant="outline" onClick={closeDialogs} type="button">Close</Button>
                 ) : (
                     <>
