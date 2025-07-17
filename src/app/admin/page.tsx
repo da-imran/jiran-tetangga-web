@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -17,7 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bell, Pencil, PlusCircle, Trash2, ArrowUpDown, ChevronDown, CalendarIcon, Check, X, ShieldQuestion } from "lucide-react";
+import { Bell, Pencil, PlusCircle, Trash2, ArrowUpDown, ChevronDown, CalendarIcon, Check, X, ShieldQuestion, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -85,11 +86,16 @@ const localEventSchema = z.object({
   status: z.string().optional(),
 });
 
+const reportSchema = z.object({
+  status: z.enum(['pending', 'approved', 'rejected']),
+});
+
 const formSchemas = {
   'Road Disruption': roadDisruptionSchema,
   'Shop Notification': shopNotificationSchema,
   'Park Status': parkStatusSchema,
   'Local Event': localEventSchema,
+  'Report': reportSchema,
 };
 
 
@@ -135,12 +141,14 @@ export default function AdminDashboardPage() {
   const [localEvents, setLocalEvents] = useState<any[]>([]);
   const [shopNotifications, setShopNotifications] = useState<any[]>([]);
   const [parkStatus, setParkStatus] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
 
   const [loading, setLoading] = useState({
     roadDisruptions: true,
     shopNotifications: true,
     parkStatus: true,
     localEvents: true,
+    reports: true,
   });
 
   const [search, setSearch] = useState({
@@ -148,6 +156,7 @@ export default function AdminDashboardPage() {
     shopNotifications: "",
     parkStatus: "",
     localEvents: "",
+    reports: "",
   });
 
   const [currentPage, setCurrentPage] = useState({
@@ -155,6 +164,7 @@ export default function AdminDashboardPage() {
     shopNotifications: 1,
     parkStatus: 1,
     localEvents: 1,
+    reports: 1,
   });
 
   const [sortConfig, setSortConfig] = useState<{ [key: string]: SortConfig }>({
@@ -162,12 +172,14 @@ export default function AdminDashboardPage() {
     shopNotifications: { key: 'name', direction: 'ascending' },
     parkStatus: { key: 'name', direction: 'ascending' },
     localEvents: { key: 'title', direction: 'ascending' },
+    reports: { key: 'date', direction: 'descending' },
   });
 
   const [filters, setFilters] = useState<{ [key: string]: string[] }>({
     shopNotifications: [],
     parkStatus: [],
     localEvents: [],
+    reports: [],
   });
 
   const fetchData = async (endpoint: string, setData: Function, setLoadingState: Function, dataKey: string) => {
@@ -176,7 +188,7 @@ export default function AdminDashboardPage() {
         const result = await api.get(`/${endpoint}`);
         let processedData = result.data;
 
-        if (dataKey === 'roadDisruptions') {
+        if (dataKey === 'roadDisruptions' || dataKey === 'reports') {
             processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
         } else if (dataKey === 'localEvents') {
             processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) }));
@@ -201,6 +213,7 @@ export default function AdminDashboardPage() {
     fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
     fetchData('parks', setParkStatus, setLoading, 'parkStatus');
     fetchData('events', setLocalEvents, setLoading, 'localEvents');
+    fetchData('reports', setReports, setLoading, 'reports');
   }, []);
   
   const closeDialogs = () => {
@@ -214,8 +227,9 @@ export default function AdminDashboardPage() {
     setIsSubmitting(true);
     const { type, itemType, data } = action;
     const isEdit = type === 'edit';
+    const adminUser = localStorage.getItem('adminUser');
 
-    let payload = { ...values };
+    let payload = { ...values, adminId: adminUser };
     if (itemType === 'Local Event' && payload.eventDate && typeof payload.eventDate.toDate === 'function') {
       payload.eventDate = payload.eventDate.toDate(getLocalTimeZone()).toISOString();
     }
@@ -225,6 +239,7 @@ export default function AdminDashboardPage() {
         'Shop Notification': 'shops',
         'Park Status': 'parks',
         'Local Event': 'events',
+        'Report': 'reports',
     };
 
     type ApiOptions = Omit<RequestInit, 'body'> & {
@@ -254,6 +269,7 @@ export default function AdminDashboardPage() {
         if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
         if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, 'parkStatus');
         if (itemType === 'Local Event') fetchData('events', setLocalEvents, setLoading, 'localEvents');
+        if (itemType === 'Report') fetchData('reports', setReports, setLoading, 'reports');
 
         closeDialogs();
     } catch (error: any) {
@@ -279,6 +295,7 @@ export default function AdminDashboardPage() {
         'Shop Notification': 'shops',
         'Park Status': 'parks',
         'Local Event': 'events',
+        'Report': 'reports',
     };
 
     type ApiOptions = Omit<RequestInit, 'body'> & {
@@ -306,6 +323,7 @@ export default function AdminDashboardPage() {
         if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
         if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, 'parkStatus');
         if (itemType === 'Local Event') fetchData('events', setLocalEvents, setLoading, 'localEvents');
+        if (itemType === 'Report') fetchData('reports', setReports, setLoading, 'reports');
 
         closeDialogs(); // Close the dialog after deletion
     } catch (error: any) {
@@ -486,6 +504,38 @@ export default function AdminDashboardPage() {
   }, [filteredLocalEvents, currentPage.localEvents]);
   
   const totalLocalEventPages = Math.ceil(filteredLocalEvents.length / ITEMS_PER_PAGE);
+
+    const filteredReports = useMemo(() => {
+    let items = [...reports];
+
+    if (filters.reports.length > 0) {
+      items = items.filter(item => filters.reports.includes(item.status));
+    }
+    
+    items = items.filter(item =>
+        item.category.toLowerCase().includes(search.reports.toLowerCase()) ||
+        item.location.toLowerCase().includes(search.reports.toLowerCase())
+    );
+
+    const { key, direction } = sortConfig.reports;
+    items.sort((a, b) => {
+      const aValue = a[key as keyof typeof a];
+      const bValue = b[key as keyof typeof b];
+      if (aValue < bValue) return direction === 'ascending' ? -1 : 1;
+      if (aValue > bValue) return direction === 'ascending' ? 1 : -1;
+      return 0;
+    });
+
+    return items;
+  }, [search.reports, sortConfig.reports, filters.reports, reports]);
+
+  const paginatedReports = useMemo(() => {
+    const startIndex = (currentPage.reports - 1) * ITEMS_PER_PAGE;
+    return filteredReports.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredReports, currentPage.reports]);
+
+  const totalReportPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
+
 
   const renderForm = () => {
     if (!action || (action.type !== 'add' && action.type !== 'edit')) return null;
@@ -689,6 +739,43 @@ export default function AdminDashboardPage() {
               )}
             </>
           );
+      case 'Report':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label data-speakable="true">Category</Label>
+              <Input readOnly defaultValue={data.category} />
+            </div>
+            <div className="space-y-2">
+              <Label data-speakable="true">Location</Label>
+              <Input readOnly defaultValue={data.location} />
+            </div>
+            <div className="space-y-2">
+              <Label data-speakable="true">Description</Label>
+              <Textarea readOnly defaultValue={data.description} />
+            </div>
+            <div className="space-y-2">
+              <Label data-speakable="true">Status</Label>
+              <Controller
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Update status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {form.formState.errors.status && <p className="text-sm text-destructive">{form.formState.errors.status.message as string}</p>}
+            </div>
+          </>
+        );
       default:
         return <p>No form available for this item type.</p>;
     }
@@ -748,7 +835,7 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading.roadDisruptions ? renderSkeleton(3) :
+                  {loading.roadDisruptions ? renderSkeleton(4) :
                   paginatedRoadDisruptions.length > 0 ? paginatedRoadDisruptions.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
@@ -769,7 +856,7 @@ export default function AdminDashboardPage() {
                     </TableRow>
                   )) : (
                      <TableRow>
-                        <TableCell colSpan={3} className="text-center h-24">No results found.</TableCell>
+                        <TableCell colSpan={4} className="text-center h-24">No results found.</TableCell>
                      </TableRow>
                   )}
                 </TableBody>
@@ -1174,6 +1261,140 @@ export default function AdminDashboardPage() {
               </div>
             </CardFooter>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-4">
+              <div>
+                <CardTitle data-speakable="true">Issue Reports</CardTitle>
+                <CardDescription data-speakable="true">
+                  Manage all user-submitted issue reports.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Search reports..."
+                  value={search.reports}
+                  onChange={(e) => handleSearch('reports', e.target.value)}
+                  className="w-full sm:w-auto"
+                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="ml-auto">
+                      Status <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {['pending', 'approved', 'rejected'].map((status) => (
+                      <DropdownMenuCheckboxItem
+                        key={status}
+                        className="capitalize"
+                        checked={filters.reports.includes(status)}
+                        onCheckedChange={() => handleFilterChange('reports', status)}
+                      >
+                        {status}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <Button variant="ghost" onClick={() => handleSort('reports', 'category')}>
+                        Category
+                        <SortArrow table="reports" columnKey="category" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" onClick={() => handleSort('reports', 'location')}>
+                        Location
+                        <SortArrow table="reports" columnKey="location" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" onClick={() => handleSort('reports', 'date')}>
+                        Date
+                        <SortArrow table="reports" columnKey="date" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" onClick={() => handleSort('reports', 'status')}>
+                        Status
+                        <SortArrow table="reports" columnKey="status" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading.reports ? renderSkeleton(5) :
+                  paginatedReports.length > 0 ? paginatedReports.map((item) => (
+                    <TableRow key={item._id}>
+                      <TableCell className="font-medium capitalize">{item.category.replace(/-/g, ' ')}</TableCell>
+                      <TableCell>{item.location}</TableCell>
+                      <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                         <Badge
+                          variant={
+                            item.status === 'approved' ? 'default' :
+                            item.status === 'rejected' ? 'destructive' :
+                            'secondary'
+                          }
+                          className={cn(
+                            'capitalize',
+                            item.status === 'approved' && 'bg-green-600',
+                            item.status === 'pending' && 'bg-yellow-500',
+                          )}
+                        >
+                          {item.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleAction('edit', 'Report', item)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAction('delete', 'Report', item)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center h-24">
+                        No reports found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+            <CardFooter className="flex justify-between items-center">
+               <span className="text-sm text-muted-foreground">
+                Page {currentPage.reports} of {totalReportPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('reports', currentPage.reports - 1)}
+                  disabled={currentPage.reports <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange('reports', currentPage.reports + 1)}
+                  disabled={currentPage.reports >= totalReportPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
         </div>
       </main>
       
@@ -1228,5 +1449,7 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
 
     
