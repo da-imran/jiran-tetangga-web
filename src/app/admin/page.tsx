@@ -744,15 +744,15 @@ export default function AdminDashboardPage() {
           <>
             <div className="space-y-2">
               <Label data-speakable="true">Category</Label>
-              <Input readOnly defaultValue={data.category} disabled={isReadOnly}/>
+              <Input readOnly defaultValue={data.category} disabled={true}/>
             </div>
             <div className="space-y-2">
               <Label data-speakable="true">Location</Label>
-              <Input readOnly defaultValue={data.location} disabled={isReadOnly}/>
+              <Input readOnly defaultValue={data.location} disabled={true}/>
             </div>
             <div className="space-y-2">
               <Label data-speakable="true">Description</Label>
-              <Textarea readOnly defaultValue={data.description} disabled={isReadOnly}/>
+              <Textarea readOnly defaultValue={data.description} disabled={true}/>
             </div>
             <div className="space-y-2">
               <Label data-speakable="true">Status</Label>
@@ -1309,6 +1309,12 @@ export default function AdminDashboardPage() {
                       </Button>
                     </TableHead>
                     <TableHead>
+                      <Button variant="ghost" onClick={() => handleSort('reports', 'description')}>
+                        Description
+                        <SortArrow table="reports" columnKey="description" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
                       <Button variant="ghost" onClick={() => handleSort('reports', 'location')}>
                         Location
                         <SortArrow table="reports" columnKey="location" />
@@ -1334,6 +1340,7 @@ export default function AdminDashboardPage() {
                   paginatedReports.length > 0 ? paginatedReports.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium capitalize">{item.category.replace(/-/g, ' ')}</TableCell>
+                      <TableCell>{item.description}</TableCell>
                       <TableCell>{item.location}</TableCell>
                       <TableCell>{new Date(item.reportedAt).toLocaleDateString()}</TableCell>
                       <TableCell>
