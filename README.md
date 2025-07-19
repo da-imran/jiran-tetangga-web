@@ -23,13 +23,11 @@ A full-stack project designed to help residents of a dense neighbourhood in **Su
 | Frontend     | TypeScript, NextJS, Tailwind CSS (via Firebase 🔥)   |
 | Backend      | Node.js + Express    |
 | Database     | MongoDB              |
-| Auth         | Encrypted password storage (AES) |
+| Auth         | AES / JWT |
 | Messaging    | WhatsApp Bot	|
 | Container    | Docker, Docker Compose |
-| Orchestration| Kubernetes (local + cloud) |
-| CI/CD        | Github Action     |
-| Monitoring   | Prometheus + Grafana |
-| Testing      | Jest / Mocha	|
+| CI Pipeline  | Github Action     |
+| Testing      | Chai / Sinon / Mocha	|
 
 ---
 
@@ -130,7 +128,7 @@ jiran-tetangga-system/
 ## 📦 Docker Support 
 1.  Docker support has been built into the project
 2.  Contains `Dockerfile` and `docker-compose.yaml` for the Docker configurations
-3.  Can easily run command in CLI to start up the project
+3.  Can easily run command `docker compose up --build -d` in CLI to start up the project
 4.  **Requirement:** Docker
 
 ## 📌 Roadmap 
@@ -141,8 +139,7 @@ jiran-tetangga-system/
 [x] NextJS frontend dashboard with Firebase Studio </br>
 [x] Docker support </br>
 [] WhatsApp bot notification </br>
-[x] CI/CD pipeline with Github Actions </br>
-[] Kubernetes orchestration </br>
+[x] CI pipeline with Github Actions </br>
 
 ## 🤝 Contributing
 
