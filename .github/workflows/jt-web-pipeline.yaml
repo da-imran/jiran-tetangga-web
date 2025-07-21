@@ -6,6 +6,7 @@ on:
 
 jobs:
   build:
+    name: GitHub Actions Building Application
     runs-on: ubuntu-latest
     strategy:
       matrix:
