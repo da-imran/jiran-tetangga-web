@@ -6,8 +6,8 @@ type ApiOptions = Omit<RequestInit, 'body'> & {
 };
 
 const API_BASE_URL = 'http://localhost:3500/jiran-tetangga/v1';
-const API_ENV = process.env.API_ENV;
-const API_URL = API_ENV === 'production' ? process.env.API_HOST : API_BASE_URL;
+const API_ENV = process.env.NEXT_PUBLIC_API_ENV;
+const API_URL = API_ENV === 'production' ? process.env.NEXT_PUBLIC_API_HOST : API_BASE_URL;
 const API_KEY = 'jxdMegN9KOAZMwMCfIbV';
 
 const getAuthToken = () => {
