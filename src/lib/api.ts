@@ -6,6 +6,8 @@ type ApiOptions = Omit<RequestInit, 'body'> & {
 };
 
 const API_BASE_URL = 'http://localhost:3500/jiran-tetangga/v1';
+const API_ENV = process.env.API_ENV;
+const API_URL = API_ENV === 'production' ? process.env.API_HOST : API_BASE_URL;
 const API_KEY = 'jxdMegN9KOAZMwMCfIbV';
 
 const getAuthToken = () => {
@@ -27,7 +29,7 @@ const apiFetch = async (endpoint: string, options: ApiOptions = {}) => {
     }
 
     // Build URL with query parameters
-    const url = new URL(`${API_BASE_URL}${processedEndpoint}`);
+    const url = new URL(`${API_URL}${processedEndpoint}`);
     if (options.params) {
         Object.entries(options.params).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
