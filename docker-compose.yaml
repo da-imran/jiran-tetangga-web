@@ -14,7 +14,7 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
     ports:
       - 9002:9002
     restart: on-failure
