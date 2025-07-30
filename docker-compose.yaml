@@ -14,7 +14,8 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     environment:
-      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: http://apidev:3500/jiran-tetangga/v1
+      NEXT_PUBLIC_API_KEY: jxdMegN9KOAZMwMCfIbV
     ports:
       - 9002:9002
     restart: on-failure

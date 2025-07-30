@@ -172,7 +172,7 @@ export default function AdminDashboardPage() {
     shopNotifications: { key: 'name', direction: 'ascending' },
     parkStatus: { key: 'name', direction: 'ascending' },
     localEvents: { key: 'title', direction: 'ascending' },
-    reports: { key: 'reportedAt', direction: 'descending' },
+    reports: { key: 'createdAt', direction: 'descending' },
   });
 
   const [filters, setFilters] = useState<{ [key: string]: string[] }>({
@@ -191,7 +191,7 @@ export default function AdminDashboardPage() {
         if (dataKey === 'roadDisruptions') {
             processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
         } else if (dataKey === 'reports') {
-            processedData = result.data.map((item: any) => ({ ...item, reportedAt: new Date(item.reportedAt) }));
+            processedData = result.data.map((item: any) => ({ ...item, createdAt: new Date(item.createdAt) }));
         } else if (dataKey === 'localEvents') {
             processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) }));
         }
@@ -1321,9 +1321,9 @@ export default function AdminDashboardPage() {
                       </Button>
                     </TableHead>
                     <TableHead>
-                      <Button variant="ghost" onClick={() => handleSort('reports', 'reportedAt')}>
+                      <Button variant="ghost" onClick={() => handleSort('reports', 'createdAt')}>
                         Date
-                        <SortArrow table="reports" columnKey="reportedAt" />
+                        <SortArrow table="reports" columnKey="createdAt" />
                       </Button>
                     </TableHead>
                     <TableHead>
@@ -1342,7 +1342,7 @@ export default function AdminDashboardPage() {
                       <TableCell className="font-medium capitalize">{item.category.replace(/-/g, ' ')}</TableCell>
                       <TableCell>{item.description}</TableCell>
                       <TableCell>{item.location}</TableCell>
-                      <TableCell>{new Date(item.reportedAt).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
                          <Badge
                           variant={

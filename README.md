@@ -11,7 +11,7 @@ A full-stack project designed to help residents of a dense neighbourhood in **Su
   - Park conditions
 - 📬 Residents can report damages or concerns
 - 🧠 Admin system for managing updates
-- 🤖 WhatsApp bot integration
+- 🤖 Discord Webhook Notifications
 - 🐳 Docker support + local and cloud deployment ready
 
 ---
@@ -24,10 +24,9 @@ A full-stack project designed to help residents of a dense neighbourhood in **Su
 | Backend      | Node.js + Express    |
 | Database     | MongoDB              |
 | Auth         | AES / JWT |
-| Messaging    | WhatsApp Bot	|
+| Notification | Discord Webhook	|
 | Container    | Docker, Docker Compose |
 | CI Pipeline  | Github Action     |
-| Testing      | Chai / Sinon / Mocha	|
 
 ---
 
@@ -107,7 +106,6 @@ jiran-tetangga-web/
 │   └── lib/
 │       └── utils.ts
 ```
-
 ---
 
 ## Frontend Technology Stack
@@ -124,6 +122,13 @@ jiran-tetangga-web/
 2.  **Install dependencies:** Run `npm install` or `yarn install` in the project root.
 3.  **Run locally:** Start the development server with `npm run dev` or `yarn dev`.
 4.  **Run with Docker:** Run `docker compose up --build -d` in the project root.
+5.  Environment Setup
+ Create a .env file
+```bash
+NEXT_PUBLIC_API_BASE_URL='your localhost URI'
+NEXT_PUBLIC_API_KEY='any random string'
+```
+<i>Sensitive information such as NEXT_PUBLIC_API_KEY, ENCRYPTION_KEY can be store using the Infisical secrets tools or you can just use any string for testing purposes</i>
 
 ## 📦 Docker Support 
 1.  Docker support has been built into the project
@@ -138,8 +143,8 @@ jiran-tetangga-web/
 [x] Modular Express routing </br>
 [x] NextJS frontend dashboard with Firebase Studio </br>
 [x] Docker support </br>
-[] WhatsApp bot notification </br>
 [x] CI pipeline with Github Actions </br>
+[] Discord webhook notification </br>
 
 ## 🤝 Contributing
 

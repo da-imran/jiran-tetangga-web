@@ -27,7 +27,6 @@ export default function Home() {
   const [detailsContent, setDetailsContent] = useState<{ title: string; description: string; content: React.ReactNode } | null>(null);
   const [roadDisruptionDate, setRoadDisruptionDate] = useState<DateValue | undefined>(today(getLocalTimeZone()));
   const [eventsDate, setEventDate] = useState<DateValue | undefined>(today(getLocalTimeZone()));
-  const [isProposeEventOpen, setIsProposeEventOpen] = useState(false);
   
   type RoadDisruption = { 
     id: string; 

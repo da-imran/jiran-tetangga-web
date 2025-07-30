@@ -5,8 +5,8 @@ type ApiOptions = Omit<RequestInit, 'body'> & {
     body?: any;
 };
 
-const API_BASE_URL = 'http://localhost:3500/jiran-tetangga/v1';
-const API_KEY = 'jxdMegN9KOAZMwMCfIbV';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
 const getAuthToken = () => {
     if (typeof window === 'undefined') {
@@ -38,7 +38,7 @@ const apiFetch = async (endpoint: string, options: ApiOptions = {}) => {
 
     const headers = new Headers({
         'Content-Type': 'application/json',
-        'X-API-Key': API_KEY,
+        'x-api-key': API_KEY ?? '',
         ...options.headers,
     });
 
