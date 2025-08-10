@@ -3,7 +3,6 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -143,7 +142,7 @@ export default function AdminDashboardPage() {
   const [shopNotifications, setShopNotifications] = useState<any[]>([]);
   const [parkStatus, setParkStatus] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
-  
+
   const [totalItems, setTotalItems] = useState({
     roadDisruptions: 0,
     shopNotifications: 0,
@@ -198,16 +197,9 @@ export default function AdminDashboardPage() {
     setTotal: Function,
     dataKey: keyof typeof currentPage
   ) => {
-  const fetchData = useCallback(async (
-    endpoint: string, 
-    setData: Function, 
-    setLoadingState: Function, 
-    setTotal: Function,
-    dataKey: keyof typeof currentPage
-  ) => {
     setLoadingState((prev: any) => ({ ...prev, [dataKey]: true }));
     try {
-        const params = {
+       const params = {
           pageNumber: currentPage[dataKey],
           dataPerPage: ITEMS_PER_PAGE,
           search: search[dataKey],
@@ -216,18 +208,17 @@ export default function AdminDashboardPage() {
           filters: filters[dataKey as keyof typeof filters]?.join(','),
         };
         const result = await api.get(`/${endpoint}`, { params });
-        let processedData = result.data.data;
+        let processedData = result.data;
 
         if (dataKey === 'roadDisruptions') {
-            processedData = result.data.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
+            processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
         } else if (dataKey === 'reports') {
-            processedData = result.data.data.map((item: any) => ({ ...item, createdAt: new Date(item.reportedAt) }));
+            processedData = result.data.map((item: any) => ({ ...item, createdAt: new Date(item.createdAt) }));
         } else if (dataKey === 'localEvents') {
-            processedData = result.data.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) }));
+            processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) }));
         }
 
         setData(processedData);
-        setTotal((prev: any) => ({ ...prev, [dataKey]: result.data.total }));
         setTotal((prev: any) => ({ ...prev, [dataKey]: result.data.total }));
     } catch (error) {
         console.error(`Error fetching ${dataKey}:`, error);
@@ -241,27 +232,8 @@ export default function AdminDashboardPage() {
         setLoadingState((prev: any) => ({ ...prev, [dataKey]: false }));
     }
   }, [currentPage, search, sortConfig, filters, toast]);
-  }, [currentPage, search, sortConfig, filters, toast]);
 
   useEffect(() => {
-    fetchData('disruptions', setRoadDisruptions, setLoading, setTotalItems, 'roadDisruptions');
-  }, [currentPage.roadDisruptions, search.roadDisruptions, sortConfig.roadDisruptions, fetchData]);
-
-  useEffect(() => {
-    fetchData('shops', setShopNotifications, setLoading, setTotalItems, 'shopNotifications');
-  }, [currentPage.shopNotifications, search.shopNotifications, sortConfig.shopNotifications, filters.shopNotifications, fetchData]);
-  
-  useEffect(() => {
-    fetchData('parks', setParkStatus, setLoading, setTotalItems, 'parkStatus');
-  }, [currentPage.parkStatus, search.parkStatus, sortConfig.parkStatus, filters.parkStatus, fetchData]);
-  
-  useEffect(() => {
-    fetchData('events', setLocalEvents, setLoading, setTotalItems, 'localEvents');
-  }, [currentPage.localEvents, search.localEvents, sortConfig.localEvents, filters.localEvents, fetchData]);
-
-  useEffect(() => {
-    fetchData('reports', setReports, setLoading, setTotalItems, 'reports');
-  }, [currentPage.reports, search.reports, sortConfig.reports, filters.reports, fetchData]);
     fetchData('disruptions', setRoadDisruptions, setLoading, setTotalItems, 'roadDisruptions');
   }, [currentPage.roadDisruptions, search.roadDisruptions, sortConfig.roadDisruptions, fetchData]);
 
@@ -314,20 +286,21 @@ export default function AdminDashboardPage() {
     };
     
     const endpoint = endpointMap[itemType];
+
     let url = `/${endpoint}`;
     const method = isEdit ? 'patch' : 'post';
     
     if (isEdit && data?._id) {
       url = `${url}/${data._id}`;
     }
-    
     try {
-        const response = await api[method](url, payload);
+        const response = await api[method](url, payload); // Pass params here
         toast({
             title: "Success!",
             description: `${itemType} has been successfully ${isEdit ? 'updated' : 'added'}.`,
         });
 
+        // Refetch data
         if (itemType === 'Road Disruption') fetchData('disruptions', setRoadDisruptions, setLoading, setTotalItems, 'roadDisruptions');
         if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, setTotalItems, 'shopNotifications');
         if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, setTotalItems, 'parkStatus');
@@ -362,16 +335,19 @@ export default function AdminDashboardPage() {
     };
 
     const endpoint = endpointMap[itemType];
+
+    // Determine the URL and params based on item type
     const url = `/${endpoint}/${data._id}`;
-    
+
     try {
-        await api.delete(url);
+       await api.delete(url);
 
         toast({
             title: "Success!",
             description: `${itemType} has been successfully deleted.`,
         });
 
+        // Refetch data after successful deletion
         if (itemType === 'Road Disruption') fetchData('disruptions', setRoadDisruptions, setLoading, setTotalItems, 'roadDisruptions');
         if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, setTotalItems, 'shopNotifications');
         if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, setTotalItems, 'parkStatus');
@@ -442,13 +418,12 @@ export default function AdminDashboardPage() {
         </TableCell>
       </TableRow>
   ));
-    
+
   const totalRoadDisruptionPages = Math.ceil(totalItems.roadDisruptions / ITEMS_PER_PAGE);
   const totalShopNotificationPages = Math.ceil(totalItems.shopNotifications / ITEMS_PER_PAGE);
   const totalParkStatusPages = Math.ceil(totalItems.parkStatus / ITEMS_PER_PAGE);
   const totalLocalEventPages = Math.ceil(totalItems.localEvents / ITEMS_PER_PAGE);
   const totalReportPages = Math.ceil(totalItems.reports / ITEMS_PER_PAGE);
-
 
   const renderForm = () => {
     if (!action || (action.type !== 'add' && action.type !== 'edit')) return null;
@@ -748,7 +723,6 @@ export default function AdminDashboardPage() {
                 <TableBody>
                   {loading.roadDisruptions ? renderSkeleton(4) :
                   roadDisruptions.length > 0 ? roadDisruptions.map((item) => (
-                  roadDisruptions.length > 0 ? roadDisruptions.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
                       <TableCell data-speakable="true">{formatDistanceToNow(item.date, { addSuffix: true })}</TableCell>
@@ -869,7 +843,6 @@ export default function AdminDashboardPage() {
                 <TableBody>
                    {loading.shopNotifications ? renderSkeleton(4) : 
                    shopNotifications.length > 0 ? shopNotifications.map((item) => (
-                   shopNotifications.length > 0 ? shopNotifications.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.name}</TableCell>
                       <TableCell data-speakable="true">{item.description}</TableCell>
@@ -987,7 +960,6 @@ export default function AdminDashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {loading.parkStatus ? renderSkeleton(4) : 
-                  parkStatus.length > 0 ? parkStatus.map((item) => (
                   parkStatus.length > 0 ? parkStatus.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.name}</TableCell>
@@ -1112,7 +1084,6 @@ export default function AdminDashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {loading.localEvents ? renderSkeleton(5) :
-                  localEvents.length > 0 ? localEvents.map((item) => (
                   localEvents.length > 0 ? localEvents.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
@@ -1253,7 +1224,6 @@ export default function AdminDashboardPage() {
                 <TableBody>
                   {loading.reports ? renderSkeleton(5) :
                   reports.length > 0 ? reports.map((item) => (
-                  reports.length > 0 ? reports.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium capitalize">{item.category.replace(/-/g, ' ')}</TableCell>
                       <TableCell>{item.description}</TableCell>
@@ -1372,8 +1342,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
-
-    
-
