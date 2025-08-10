@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -99,7 +99,7 @@ const formSchemas = {
 };
 
 
-const ITEMS_PER_PAGE = 3;
+const ITEMS_PER_PAGE = 5;
 type SortDirection = "ascending" | "descending";
 interface SortConfig {
   key: string;
@@ -143,6 +143,14 @@ export default function AdminDashboardPage() {
   const [parkStatus, setParkStatus] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
 
+  const [totalItems, setTotalItems] = useState({
+    roadDisruptions: 0,
+    shopNotifications: 0,
+    parkStatus: 0,
+    localEvents: 0,
+    reports: 0,
+  });
+
   const [loading, setLoading] = useState({
     roadDisruptions: true,
     shopNotifications: true,
@@ -182,10 +190,24 @@ export default function AdminDashboardPage() {
     reports: [],
   });
 
-  const fetchData = async (endpoint: string, setData: Function, setLoadingState: Function, dataKey: string) => {
+  const fetchData = useCallback(async (
+    endpoint: string, 
+    setData: Function, 
+    setLoadingState: Function, 
+    setTotal: Function,
+    dataKey: keyof typeof currentPage
+  ) => {
     setLoadingState((prev: any) => ({ ...prev, [dataKey]: true }));
     try {
-        const result = await api.get(`/${endpoint}`);
+       const params = {
+          pageNumber: currentPage[dataKey],
+          dataPerPage: ITEMS_PER_PAGE,
+          search: search[dataKey],
+          sort: sortConfig[dataKey].key,
+          order: sortConfig[dataKey].direction === 'ascending' ? 'asc' : 'desc',
+          filters: filters[dataKey as keyof typeof filters]?.join(','),
+        };
+        const result = await api.get(`/${endpoint}`, { params });
         let processedData = result.data;
 
         if (dataKey === 'roadDisruptions') {
@@ -197,6 +219,7 @@ export default function AdminDashboardPage() {
         }
 
         setData(processedData);
+        setTotal((prev: any) => ({ ...prev, [dataKey]: result.data.total }));
     } catch (error) {
         console.error(`Error fetching ${dataKey}:`, error);
         toast({
@@ -208,15 +231,27 @@ export default function AdminDashboardPage() {
     } finally {
         setLoadingState((prev: any) => ({ ...prev, [dataKey]: false }));
     }
-  };
+  }, [currentPage, search, sortConfig, filters, toast]);
 
   useEffect(() => {
-    fetchData('disruptions', setRoadDisruptions, setLoading, 'roadDisruptions');
-    fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
-    fetchData('parks', setParkStatus, setLoading, 'parkStatus');
-    fetchData('events', setLocalEvents, setLoading, 'localEvents');
-    fetchData('reports', setReports, setLoading, 'reports');
-  }, []);
+    fetchData('disruptions', setRoadDisruptions, setLoading, setTotalItems, 'roadDisruptions');
+  }, [currentPage.roadDisruptions, search.roadDisruptions, sortConfig.roadDisruptions, fetchData]);
+
+  useEffect(() => {
+    fetchData('shops', setShopNotifications, setLoading, setTotalItems, 'shopNotifications');
+  }, [currentPage.shopNotifications, search.shopNotifications, sortConfig.shopNotifications, filters.shopNotifications, fetchData]);
+  
+  useEffect(() => {
+    fetchData('parks', setParkStatus, setLoading, setTotalItems, 'parkStatus');
+  }, [currentPage.parkStatus, search.parkStatus, sortConfig.parkStatus, filters.parkStatus, fetchData]);
+  
+  useEffect(() => {
+    fetchData('events', setLocalEvents, setLoading, setTotalItems, 'localEvents');
+  }, [currentPage.localEvents, search.localEvents, sortConfig.localEvents, filters.localEvents, fetchData]);
+
+  useEffect(() => {
+    fetchData('reports', setReports, setLoading, setTotalItems, 'reports');
+  }, [currentPage.reports, search.reports, sortConfig.reports, filters.reports, fetchData]);
   
   const closeDialogs = () => {
     setAction(null);
@@ -251,7 +286,6 @@ export default function AdminDashboardPage() {
     };
     
     const endpoint = endpointMap[itemType];
-    const options: ApiOptions = { method: isEdit ? 'put' : 'post', body: payload };
 
     let url = `/${endpoint}`;
     const method = isEdit ? 'patch' : 'post';
@@ -260,18 +294,18 @@ export default function AdminDashboardPage() {
       url = `${url}/${data._id}`;
     }
     try {
-        const response = await api[method](url, options.body, { params: options.params }); // Pass params here
+        const response = await api[method](url, payload); // Pass params here
         toast({
             title: "Success!",
             description: `${itemType} has been successfully ${isEdit ? 'updated' : 'added'}.`,
         });
 
         // Refetch data
-        if (itemType === 'Road Disruption') fetchData('disruptions', setRoadDisruptions, setLoading, 'roadDisruptions');
-        if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
-        if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, 'parkStatus');
-        if (itemType === 'Local Event') fetchData('events', setLocalEvents, setLoading, 'localEvents');
-        if (itemType === 'Report') fetchData('reports', setReports, setLoading, 'reports');
+        if (itemType === 'Road Disruption') fetchData('disruptions', setRoadDisruptions, setLoading, setTotalItems, 'roadDisruptions');
+        if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, setTotalItems, 'shopNotifications');
+        if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, setTotalItems, 'parkStatus');
+        if (itemType === 'Local Event') fetchData('events', setLocalEvents, setLoading, setTotalItems, 'localEvents');
+        if (itemType === 'Report') fetchData('reports', setReports, setLoading, setTotalItems, 'reports');
 
         closeDialogs();
     } catch (error: any) {
@@ -300,20 +334,13 @@ export default function AdminDashboardPage() {
         'Report': 'reports',
     };
 
-    type ApiOptions = Omit<RequestInit, 'body'> & {
-      params?: Record<string, any>;
-      pathParams?: Record<string, string | number>;
-      body?: any;
-    };
-
     const endpoint = endpointMap[itemType];
 
     // Determine the URL and params based on item type
     const url = `/${endpoint}/${data._id}`;
-    const options: ApiOptions = { method: 'delete' };
 
     try {
-        await api.delete(url, { params: options.params });
+       await api.delete(url);
 
         toast({
             title: "Success!",
@@ -321,11 +348,11 @@ export default function AdminDashboardPage() {
         });
 
         // Refetch data after successful deletion
-        if (itemType === 'Road Disruption') fetchData('disruptions', setRoadDisruptions, setLoading, 'roadDisruptions');
-        if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, 'shopNotifications');
-        if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, 'parkStatus');
-        if (itemType === 'Local Event') fetchData('events', setLocalEvents, setLoading, 'localEvents');
-        if (itemType === 'Report') fetchData('reports', setReports, setLoading, 'reports');
+        if (itemType === 'Road Disruption') fetchData('disruptions', setRoadDisruptions, setLoading, setTotalItems, 'roadDisruptions');
+        if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, setTotalItems, 'shopNotifications');
+        if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, setTotalItems, 'parkStatus');
+        if (itemType === 'Local Event') fetchData('events', setLocalEvents, setLoading, setTotalItems, 'localEvents');
+        if (itemType === 'Report') fetchData('reports', setReports, setLoading, setTotalItems, 'reports');
 
         closeDialogs(); // Close the dialog after deletion
     } catch (error: any) {
@@ -391,153 +418,12 @@ export default function AdminDashboardPage() {
         </TableCell>
       </TableRow>
   ));
-    
-  const filteredRoadDisruptions = useMemo(() => {
-    let items = roadDisruptions.filter(item =>
-      item.title.toLowerCase().includes(search.roadDisruptions.toLowerCase())
-    );
 
-    const { key, direction } = sortConfig.roadDisruptions;
-    items.sort((a, b) => {
-      const aValue = a[key as keyof typeof a];
-      const bValue = b[key as keyof typeof b];
-      if (aValue < bValue) return direction === 'ascending' ? -1 : 1;
-      if (aValue > bValue) return direction === 'ascending' ? 1 : -1;
-      return 0;
-    });
-
-    return items;
-  }, [search.roadDisruptions, sortConfig.roadDisruptions, roadDisruptions]);
-
-  const paginatedRoadDisruptions = useMemo(() => {
-    const startIndex = (currentPage.roadDisruptions - 1) * ITEMS_PER_PAGE;
-    return filteredRoadDisruptions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredRoadDisruptions, currentPage.roadDisruptions]);
-
-  const totalRoadDisruptionPages = Math.ceil(filteredRoadDisruptions.length / ITEMS_PER_PAGE);
-
-  const filteredShopNotifications = useMemo(() => {
-    let items = [...shopNotifications];
-    
-    if (filters.shopNotifications.length > 0) {
-      items = items.filter(item => filters.shopNotifications.includes(item.status));
-    }
-
-    items = items.filter(item =>
-      item.name.toLowerCase().includes(search.shopNotifications.toLowerCase()) ||
-      item.description.toLowerCase().includes(search.shopNotifications.toLowerCase())
-    );
-
-    const { key, direction } = sortConfig.shopNotifications;
-    items.sort((a, b) => {
-      const aValue = a[key as keyof typeof a];
-      const bValue = b[key as keyof typeof b];
-      if (aValue < bValue) return direction === 'ascending' ? -1 : 1;
-      if (aValue > bValue) return direction === 'ascending' ? 1 : -1;
-      return 0;
-    });
-
-    return items;
-  }, [search.shopNotifications, sortConfig.shopNotifications, filters.shopNotifications, shopNotifications]);
-  
-  const paginatedShopNotifications = useMemo(() => {
-    const startIndex = (currentPage.shopNotifications - 1) * ITEMS_PER_PAGE;
-    return filteredShopNotifications.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredShopNotifications, currentPage.shopNotifications]);
-  
-  const totalShopNotificationPages = Math.ceil(filteredShopNotifications.length / ITEMS_PER_PAGE);
-  
-  const filteredParkStatus = useMemo(() => {
-     let items = [...parkStatus];
-    
-    if (filters.parkStatus.length > 0) {
-      items = items.filter(item => filters.parkStatus.includes(item.status));
-    }
-
-    items = items.filter(item =>
-      item.name.toLowerCase().includes(search.parkStatus.toLowerCase()) ||
-      item.description.toLowerCase().includes(search.parkStatus.toLowerCase())
-    );
-    
-    const { key, direction } = sortConfig.parkStatus;
-    items.sort((a, b) => {
-      const aValue = a[key as keyof typeof a] as string;
-      const bValue = b[key as keyof typeof b] as string;
-      return direction === 'ascending' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-    });
-
-    return items;
-  }, [search.parkStatus, sortConfig.parkStatus, filters.parkStatus, parkStatus]);
-  
-  const paginatedParkStatus = useMemo(() => {
-    const startIndex = (currentPage.parkStatus - 1) * ITEMS_PER_PAGE;
-    return filteredParkStatus.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredParkStatus, currentPage.parkStatus]);
-  
-  const totalParkStatusPages = Math.ceil(filteredParkStatus.length / ITEMS_PER_PAGE);
-
-  const filteredLocalEvents = useMemo(() => {
-    let items = [...localEvents];
-
-    if (filters.localEvents.length > 0) {
-      items = items.filter(item => filters.localEvents.includes(item.status));
-    }
-
-    items = items.filter(item =>
-      item.title.toLowerCase().includes(search.localEvents.toLowerCase())
-    );
-
-    const { key, direction } = sortConfig.localEvents;
-    items.sort((a, b) => {
-      const aValue = a[key as keyof typeof a] as any;
-      const bValue = b[key as keyof typeof b] as any;
-      if (key === 'date') {
-        return direction === 'ascending' ? aValue - bValue : bValue - aValue;
-      }
-      return direction === 'ascending' ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue));
-    });
-
-    return items;
-  }, [search.localEvents, sortConfig.localEvents, localEvents, filters.localEvents]);
-  
-  const paginatedLocalEvents = useMemo(() => {
-    const startIndex = (currentPage.localEvents - 1) * ITEMS_PER_PAGE;
-    return filteredLocalEvents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredLocalEvents, currentPage.localEvents]);
-  
-  const totalLocalEventPages = Math.ceil(filteredLocalEvents.length / ITEMS_PER_PAGE);
-
-    const filteredReports = useMemo(() => {
-    let items = [...reports];
-
-    if (filters.reports.length > 0) {
-      items = items.filter(item => filters.reports.includes(item.status));
-    }
-    
-    items = items.filter(item =>
-        item.category.toLowerCase().includes(search.reports.toLowerCase()) ||
-        item.location.toLowerCase().includes(search.reports.toLowerCase())
-    );
-
-    const { key, direction } = sortConfig.reports;
-    items.sort((a, b) => {
-      const aValue = a[key as keyof typeof a];
-      const bValue = b[key as keyof typeof b];
-      if (aValue < bValue) return direction === 'ascending' ? -1 : 1;
-      if (aValue > bValue) return direction === 'ascending' ? 1 : -1;
-      return 0;
-    });
-
-    return items;
-  }, [search.reports, sortConfig.reports, filters.reports, reports]);
-
-  const paginatedReports = useMemo(() => {
-    const startIndex = (currentPage.reports - 1) * ITEMS_PER_PAGE;
-    return filteredReports.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredReports, currentPage.reports]);
-
-  const totalReportPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
-
+  const totalRoadDisruptionPages = Math.ceil(totalItems.roadDisruptions / ITEMS_PER_PAGE);
+  const totalShopNotificationPages = Math.ceil(totalItems.shopNotifications / ITEMS_PER_PAGE);
+  const totalParkStatusPages = Math.ceil(totalItems.parkStatus / ITEMS_PER_PAGE);
+  const totalLocalEventPages = Math.ceil(totalItems.localEvents / ITEMS_PER_PAGE);
+  const totalReportPages = Math.ceil(totalItems.reports / ITEMS_PER_PAGE);
 
   const renderForm = () => {
     if (!action || (action.type !== 'add' && action.type !== 'edit')) return null;
@@ -836,7 +722,7 @@ export default function AdminDashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {loading.roadDisruptions ? renderSkeleton(4) :
-                  paginatedRoadDisruptions.length > 0 ? paginatedRoadDisruptions.map((item) => (
+                  roadDisruptions.length > 0 ? roadDisruptions.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
                       <TableCell data-speakable="true">{formatDistanceToNow(item.date, { addSuffix: true })}</TableCell>
@@ -956,7 +842,7 @@ export default function AdminDashboardPage() {
                 </TableHeader>
                 <TableBody>
                    {loading.shopNotifications ? renderSkeleton(4) : 
-                   paginatedShopNotifications.length > 0 ? paginatedShopNotifications.map((item) => (
+                   shopNotifications.length > 0 ? shopNotifications.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.name}</TableCell>
                       <TableCell data-speakable="true">{item.description}</TableCell>
@@ -1074,7 +960,7 @@ export default function AdminDashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {loading.parkStatus ? renderSkeleton(4) : 
-                  paginatedParkStatus.length > 0 ? paginatedParkStatus.map((item) => (
+                  parkStatus.length > 0 ? parkStatus.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.name}</TableCell>
                       <TableCell data-speakable="true">{item.description}</TableCell>
@@ -1198,7 +1084,7 @@ export default function AdminDashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {loading.localEvents ? renderSkeleton(5) :
-                  paginatedLocalEvents.length > 0 ? paginatedLocalEvents.map((item) => (
+                  localEvents.length > 0 ? localEvents.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
                       <TableCell data-speakable="true">{new Date(item.date).toLocaleDateString()}</TableCell>
@@ -1337,7 +1223,7 @@ export default function AdminDashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {loading.reports ? renderSkeleton(5) :
-                  paginatedReports.length > 0 ? paginatedReports.map((item) => (
+                  reports.length > 0 ? reports.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium capitalize">{item.category.replace(/-/g, ' ')}</TableCell>
                       <TableCell>{item.description}</TableCell>
@@ -1456,7 +1342,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
-
-    
