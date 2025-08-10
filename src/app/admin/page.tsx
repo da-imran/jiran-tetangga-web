@@ -207,6 +207,7 @@ export default function AdminDashboardPage() {
         };
         const result = await api.get(`/${endpoint}`, { params });
         let processedData = result.data;
+        const totalItemsCount = result.total;
 
         if (dataKey === 'roadDisruptions') {
             processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
@@ -217,7 +218,7 @@ export default function AdminDashboardPage() {
         }
 
         setData(processedData);
-        setTotal((prev: any) => ({ ...prev, [dataKey]: result.data.total }));
+        setTotal((prev: any) => ({ ...prev, [dataKey]: totalItemsCount }));
     } catch (error) {
         console.error(`Error fetching ${dataKey}:`, error);
         toast({
