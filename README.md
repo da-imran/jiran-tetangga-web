@@ -26,7 +26,7 @@ A full-stack project designed to help residents of a dense neighbourhood in **Su
 | Auth         | AES / JWT |
 | Notification | Discord Webhook	|
 | Container    | Docker, Docker Compose |
-| CI Pipeline  | Github Action     |
+| CI/CD Pipeline  | Github Action     |
 
 ---
 
@@ -99,7 +99,7 @@ NEXT_PUBLIC_API_KEY='any random string'
 [x] Modular Express routing </br>
 [x] NextJS frontend dashboard with Firebase Studio </br>
 [x] Docker support </br>
-[x] CI pipeline with Github Actions </br>
+[x] CI/CD pipeline with Github Actions </br>
 [] Discord webhook notification </br>
 
 ## 🤝 Contributing
