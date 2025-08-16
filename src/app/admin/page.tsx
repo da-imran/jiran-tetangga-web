@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -114,6 +115,50 @@ export default function AdminDashboardPage() {
     defaultValues: {}
   });
 
+  // Road Disruptions State
+  const [roadDisruptions, setRoadDisruptions] = useState<any[]>([]);
+  const [totalRoadDisruptions, setTotalRoadDisruptions] = useState(0);
+  const [loadingRoadDisruptions, setLoadingRoadDisruptions] = useState(true);
+  const [searchRoadDisruptions, setSearchRoadDisruptions] = useState("");
+  const [currentPageRoadDisruptions, setCurrentPageRoadDisruptions] = useState(1);
+  const [sortConfigRoadDisruptions, setSortConfigRoadDisruptions] = useState<SortConfig>({ key: 'date', direction: 'descending' });
+
+  // Shop Notifications State
+  const [shopNotifications, setShopNotifications] = useState<any[]>([]);
+  const [totalShopNotifications, setTotalShopNotifications] = useState(0);
+  const [loadingShopNotifications, setLoadingShopNotifications] = useState(true);
+  const [searchShopNotifications, setSearchShopNotifications] = useState("");
+  const [currentPageShopNotifications, setCurrentPageShopNotifications] = useState(1);
+  const [sortConfigShopNotifications, setSortConfigShopNotifications] = useState<SortConfig>({ key: 'name', direction: 'ascending' });
+  const [filtersShopNotifications, setFiltersShopNotifications] = useState<string[]>([]);
+
+  // Park Status State
+  const [parkStatus, setParkStatus] = useState<any[]>([]);
+  const [totalParkStatus, setTotalParkStatus] = useState(0);
+  const [loadingParkStatus, setLoadingParkStatus] = useState(true);
+  const [searchParkStatus, setSearchParkStatus] = useState("");
+  const [currentPageParkStatus, setCurrentPageParkStatus] = useState(1);
+  const [sortConfigParkStatus, setSortConfigParkStatus] = useState<SortConfig>({ key: 'name', direction: 'ascending' });
+  const [filtersParkStatus, setFiltersParkStatus] = useState<string[]>([]);
+
+  // Local Events State
+  const [localEvents, setLocalEvents] = useState<any[]>([]);
+  const [totalLocalEvents, setTotalLocalEvents] = useState(0);
+  const [loadingLocalEvents, setLoadingLocalEvents] = useState(true);
+  const [searchLocalEvents, setSearchLocalEvents] = useState("");
+  const [currentPageLocalEvents, setCurrentPageLocalEvents] = useState(1);
+  const [sortConfigLocalEvents, setSortConfigLocalEvents] = useState<SortConfig>({ key: 'title', direction: 'ascending' });
+  const [filtersLocalEvents, setFiltersLocalEvents] = useState<string[]>([]);
+
+  // Reports State
+  const [reports, setReports] = useState<any[]>([]);
+  const [totalReports, setTotalReports] = useState(0);
+  const [loadingReports, setLoadingReports] = useState(true);
+  const [searchReports, setSearchReports] = useState("");
+  const [currentPageReports, setCurrentPageReports] = useState(1);
+  const [sortConfigReports, setSortConfigReports] = useState<SortConfig>({ key: 'createdAt', direction: 'descending' });
+  const [filtersReports, setFiltersReports] = useState<string[]>([]);
+
   useEffect(() => {
     if (action?.type === 'edit' && action.data) {
       const itemType = action.itemType;
@@ -129,128 +174,126 @@ export default function AdminDashboardPage() {
       form.reset(defaultValues);
     } else if (action?.type === 'add') {
       form.reset({});
-    } else if (action?.type === 'delete' && action.data) {
-
     }
   }, [action, form]);
 
-
-  const [roadDisruptions, setRoadDisruptions] = useState<any[]>([]);
-  const [localEvents, setLocalEvents] = useState<any[]>([]);
-  const [shopNotifications, setShopNotifications] = useState<any[]>([]);
-  const [parkStatus, setParkStatus] = useState<any[]>([]);
-  const [reports, setReports] = useState<any[]>([]);
-
-  const [totalItems, setTotalItems] = useState({
-    roadDisruptions: 0,
-    shopNotifications: 0,
-    parkStatus: 0,
-    localEvents: 0,
-    reports: 0,
-  });
-
-  const [loading, setLoading] = useState({
-    roadDisruptions: true,
-    shopNotifications: true,
-    parkStatus: true,
-    localEvents: true,
-    reports: true,
-  });
-
-  const [search, setSearch] = useState({
-    roadDisruptions: "",
-    shopNotifications: "",
-    parkStatus: "",
-    localEvents: "",
-    reports: "",
-  });
-
-  const [currentPage, setCurrentPage] = useState({
-    roadDisruptions: 1,
-    shopNotifications: 1,
-    parkStatus: 1,
-    localEvents: 1,
-    reports: 1,
-  });
-
-  const [sortConfig, setSortConfig] = useState<{ [key: string]: SortConfig }>({
-    roadDisruptions: { key: 'date', direction: 'descending' },
-    shopNotifications: { key: 'name', direction: 'ascending' },
-    parkStatus: { key: 'name', direction: 'ascending' },
-    localEvents: { key: 'title', direction: 'ascending' },
-    reports: { key: 'createdAt', direction: 'descending' },
-  });
-
-  const [filters, setFilters] = useState<{ [key: string]: string[] }>({
-    shopNotifications: [],
-    parkStatus: [],
-    localEvents: [],
-    reports: [],
-  });
-
-  const fetchData = useCallback(async (
-    endpoint: string, 
-    setData: Function, 
-    setLoadingState: Function, 
-    setTotal: Function,
-    dataKey: keyof typeof currentPage
-  ) => {
-    setLoadingState((prev: any) => ({ ...prev, [dataKey]: true }));
+  const fetchRoadDisruptions = useCallback(async () => {
+    setLoadingRoadDisruptions(true);
     try {
-       const params = {
-          pageNumber: currentPage[dataKey],
-          dataPerPage: ITEMS_PER_PAGE,
-          search: search[dataKey],
-          sort: sortConfig[dataKey].key,
-          order: sortConfig[dataKey].direction === 'ascending' ? 'asc' : 'desc',
-          filters: filters[dataKey as keyof typeof filters]?.join(','),
-        };
-        const result = await api.get(`/${endpoint}`, { params });
-        let processedData = result.data;
-        const totalItemsCount = result.total;
-
-        if (dataKey === 'roadDisruptions') {
-            processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
-        } else if (dataKey === 'reports') {
-            processedData = result.data.map((item: any) => ({ ...item, createdAt: new Date(item.createdAt) }));
-        } else if (dataKey === 'localEvents') {
-            processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) }));
-        }
-
-        setData(processedData);
-        setTotal((prev: any) => ({ ...prev, [dataKey]: totalItemsCount }));
+      const params = {
+        pageNumber: currentPageRoadDisruptions,
+        dataPerPage: ITEMS_PER_PAGE,
+        search: searchRoadDisruptions,
+        sort: sortConfigRoadDisruptions.key,
+        order: sortConfigRoadDisruptions.direction === 'ascending' ? 'asc' : 'desc',
+      };
+      const result = await api.get('/disruptions', { params });
+      let processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.createdAt) }));
+      setRoadDisruptions(processedData);
+      setTotalRoadDisruptions(result.total);
     } catch (error) {
-        console.error(`Error fetching ${dataKey}:`, error);
-        toast({
-          variant: "destructive",
-          title: `Failed to fetch ${dataKey}`,
-          description: "Please check the API connection and try again.",
-        })
-        setData([]);
+      console.error('Error fetching road disruptions:', error);
+      toast({ variant: 'destructive', title: 'Failed to fetch road disruptions.' });
     } finally {
-        setLoadingState((prev: any) => ({ ...prev, [dataKey]: false }));
+      setLoadingRoadDisruptions(false);
     }
-  }, [currentPage, search, sortConfig, filters, toast]);
+  }, [currentPageRoadDisruptions, searchRoadDisruptions, sortConfigRoadDisruptions, toast]);
 
-  useEffect(() => {
-    fetchData('disruptions', setRoadDisruptions, setLoading, setTotalItems, 'roadDisruptions');
-  }, [currentPage.roadDisruptions, search.roadDisruptions, sortConfig.roadDisruptions, fetchData]);
+  const fetchShopNotifications = useCallback(async () => {
+    setLoadingShopNotifications(true);
+    try {
+      const params = {
+        pageNumber: currentPageShopNotifications,
+        dataPerPage: ITEMS_PER_PAGE,
+        search: searchShopNotifications,
+        sort: sortConfigShopNotifications.key,
+        order: sortConfigShopNotifications.direction === 'ascending' ? 'asc' : 'desc',
+        filters: filtersShopNotifications.join(','),
+      };
+      const result = await api.get('/shops', { params });
+      setShopNotifications(result.data);
+      setTotalShopNotifications(result.total);
+    } catch (error) {
+      console.error('Error fetching shop notifications:', error);
+      toast({ variant: 'destructive', title: 'Failed to fetch shop notifications.' });
+    } finally {
+      setLoadingShopNotifications(false);
+    }
+  }, [currentPageShopNotifications, searchShopNotifications, sortConfigShopNotifications, filtersShopNotifications, toast]);
 
-  useEffect(() => {
-    fetchData('shops', setShopNotifications, setLoading, setTotalItems, 'shopNotifications');
-  }, [currentPage.shopNotifications, search.shopNotifications, sortConfig.shopNotifications, filters.shopNotifications, fetchData]);
-  
-  useEffect(() => {
-    fetchData('parks', setParkStatus, setLoading, setTotalItems, 'parkStatus');
-  }, [currentPage.parkStatus, search.parkStatus, sortConfig.parkStatus, filters.parkStatus, fetchData]);
-  
-  useEffect(() => {
-    fetchData('events', setLocalEvents, setLoading, setTotalItems, 'localEvents');
-  }, [currentPage.localEvents, search.localEvents, sortConfig.localEvents, filters.localEvents, fetchData]);
+  const fetchParkStatus = useCallback(async () => {
+    setLoadingParkStatus(true);
+    try {
+      const params = {
+        pageNumber: currentPageParkStatus,
+        dataPerPage: ITEMS_PER_PAGE,
+        search: searchParkStatus,
+        sort: sortConfigParkStatus.key,
+        order: sortConfigParkStatus.direction === 'ascending' ? 'asc' : 'desc',
+        filters: filtersParkStatus.join(','),
+      };
+      const result = await api.get('/parks', { params });
+      setParkStatus(result.data);
+      setTotalParkStatus(result.total);
+    } catch (error) {
+      console.error('Error fetching park status:', error);
+      toast({ variant: 'destructive', title: 'Failed to fetch park status.' });
+    } finally {
+      setLoadingParkStatus(false);
+    }
+  }, [currentPageParkStatus, searchParkStatus, sortConfigParkStatus, filtersParkStatus, toast]);
 
-  useEffect(() => {
-    fetchData('reports', setReports, setLoading, setTotalItems, 'reports');
-  }, [currentPage.reports, search.reports, sortConfig.reports, filters.reports, fetchData]);
+  const fetchLocalEvents = useCallback(async () => {
+    setLoadingLocalEvents(true);
+    try {
+      const params = {
+        pageNumber: currentPageLocalEvents,
+        dataPerPage: ITEMS_PER_PAGE,
+        search: searchLocalEvents,
+        sort: sortConfigLocalEvents.key,
+        order: sortConfigLocalEvents.direction === 'ascending' ? 'asc' : 'desc',
+        filters: filtersLocalEvents.join(','),
+      };
+      const result = await api.get('/events', { params });
+      let processedData = result.data.map((item: any) => ({ ...item, date: new Date(item.eventDate) }));
+      setLocalEvents(processedData);
+      setTotalLocalEvents(result.total);
+    } catch (error) {
+      console.error('Error fetching local events:', error);
+      toast({ variant: 'destructive', title: 'Failed to fetch local events.' });
+    } finally {
+      setLoadingLocalEvents(false);
+    }
+  }, [currentPageLocalEvents, searchLocalEvents, sortConfigLocalEvents, filtersLocalEvents, toast]);
+
+  const fetchReports = useCallback(async () => {
+    setLoadingReports(true);
+    try {
+      const params = {
+        pageNumber: currentPageReports,
+        dataPerPage: ITEMS_PER_PAGE,
+        search: searchReports,
+        sort: sortConfigReports.key,
+        order: sortConfigReports.direction === 'ascending' ? 'asc' : 'desc',
+        filters: filtersReports.join(','),
+      };
+      const result = await api.get('/reports', { params });
+      let processedData = result.data.map((item: any) => ({ ...item, createdAt: new Date(item.reportedAt) }));
+      setReports(processedData);
+      setTotalReports(result.total);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      toast({ variant: 'destructive', title: 'Failed to fetch reports.' });
+    } finally {
+      setLoadingReports(false);
+    }
+  }, [currentPageReports, searchReports, sortConfigReports, filtersReports, toast]);
+
+  useEffect(() => { fetchRoadDisruptions(); }, [fetchRoadDisruptions]);
+  useEffect(() => { fetchShopNotifications(); }, [fetchShopNotifications]);
+  useEffect(() => { fetchParkStatus(); }, [fetchParkStatus]);
+  useEffect(() => { fetchLocalEvents(); }, [fetchLocalEvents]);
+  useEffect(() => { fetchReports(); }, [fetchReports]);
   
   const closeDialogs = () => {
     setAction(null);
@@ -277,12 +320,6 @@ export default function AdminDashboardPage() {
         'Local Event': 'events',
         'Report': 'reports',
     };
-
-    type ApiOptions = Omit<RequestInit, 'body'> & {
-      params?: Record<string, any>;
-      pathParams?: Record<string, string | number>;
-      body?: any;
-    };
     
     const endpoint = endpointMap[itemType];
 
@@ -293,18 +330,18 @@ export default function AdminDashboardPage() {
       url = `${url}/${data._id}`;
     }
     try {
-        const response = await api[method](url, payload); // Pass params here
+        await api[method](url, payload);
         toast({
             title: "Success!",
             description: `${itemType} has been successfully ${isEdit ? 'updated' : 'added'}.`,
         });
 
         // Refetch data
-        if (itemType === 'Road Disruption') fetchData('disruptions', setRoadDisruptions, setLoading, setTotalItems, 'roadDisruptions');
-        if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, setTotalItems, 'shopNotifications');
-        if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, setTotalItems, 'parkStatus');
-        if (itemType === 'Local Event') fetchData('events', setLocalEvents, setLoading, setTotalItems, 'localEvents');
-        if (itemType === 'Report') fetchData('reports', setReports, setLoading, setTotalItems, 'reports');
+        if (itemType === 'Road Disruption') fetchRoadDisruptions();
+        if (itemType === 'Shop Notification') fetchShopNotifications();
+        if (itemType === 'Park Status') fetchParkStatus();
+        if (itemType === 'Local Event') fetchLocalEvents();
+        if (itemType === 'Report') fetchReports();
 
         closeDialogs();
     } catch (error: any) {
@@ -334,8 +371,6 @@ export default function AdminDashboardPage() {
     };
 
     const endpoint = endpointMap[itemType];
-
-    // Determine the URL and params based on item type
     const url = `/${endpoint}/${data._id}`;
 
     try {
@@ -347,13 +382,13 @@ export default function AdminDashboardPage() {
         });
 
         // Refetch data after successful deletion
-        if (itemType === 'Road Disruption') fetchData('disruptions', setRoadDisruptions, setLoading, setTotalItems, 'roadDisruptions');
-        if (itemType === 'Shop Notification') fetchData('shops', setShopNotifications, setLoading, setTotalItems, 'shopNotifications');
-        if (itemType === 'Park Status') fetchData('parks', setParkStatus, setLoading, setTotalItems, 'parkStatus');
-        if (itemType === 'Local Event') fetchData('events', setLocalEvents, setLoading, setTotalItems, 'localEvents');
-        if (itemType === 'Report') fetchData('reports', setReports, setLoading, setTotalItems, 'reports');
+        if (itemType === 'Road Disruption') fetchRoadDisruptions();
+        if (itemType === 'Shop Notification') fetchShopNotifications();
+        if (itemType === 'Park Status') fetchParkStatus();
+        if (itemType === 'Local Event') fetchLocalEvents();
+        if (itemType === 'Report') fetchReports();
 
-        closeDialogs(); // Close the dialog after deletion
+        closeDialogs();
     } catch (error: any) {
         console.error(`Error deleting ${itemType}:`, error);
         toast({
@@ -366,63 +401,70 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleSort = (table: keyof typeof sortConfig, key: string) => {
-    setSortConfig(prev => {
-      const currentDirection = prev[table].direction;
-      const currentKey = prev[table].key;
-      let direction: SortDirection = 'ascending';
-      if (currentKey === key && currentDirection === 'ascending') {
-        direction = 'descending';
-      }
-      return { ...prev, [table]: { key, direction } };
-    });
+  const sortConfigMap: { [key: string]: { config: SortConfig, setConfig: (c: SortConfig) => void } } = {
+    roadDisruptions: { config: sortConfigRoadDisruptions, setConfig: setSortConfigRoadDisruptions },
+    shopNotifications: { config: sortConfigShopNotifications, setConfig: setSortConfigShopNotifications },
+    parkStatus: { config: sortConfigParkStatus, setConfig: setSortConfigParkStatus },
+    localEvents: { config: sortConfigLocalEvents, setConfig: setSortConfigLocalEvents },
+    reports: { config: sortConfigReports, setConfig: setSortConfigReports },
   };
   
-  const handleFilterChange = (table: keyof typeof filters, value: string) => {
-    setFilters(prev => {
-      const currentFilters = prev[table];
-      const newFilters = currentFilters.includes(value)
-        ? currentFilters.filter(item => item !== value)
-        : [...currentFilters, value];
-      return { ...prev, [table]: newFilters };
-    });
-    handlePageChange(table as keyof typeof currentPage, 1);
-  };
-
-  const handleSearch = (table: keyof typeof search, value: string) => {
-    setSearch(prev => ({ ...prev, [table]: value }));
-    setCurrentPage(prev => ({ ...prev, [table]: 1 }));
-  };
-
-  const handlePageChange = (table: keyof typeof currentPage, page: number) => {
-    setCurrentPage(prev => ({ ...prev, [table]: page }));
+  const handleSort = (table: string, key: string) => {
+    const { config, setConfig } = sortConfigMap[table];
+    let direction: SortDirection = 'ascending';
+    if (config.key === key && config.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setConfig({ key, direction });
   };
   
+  const handleFilterChange = (
+    table: 'shopNotifications' | 'parkStatus' | 'localEvents' | 'reports',
+    value: string
+  ) => {
+    const filterStateMap = {
+        shopNotifications: { filters: filtersShopNotifications, setFilters: setFiltersShopNotifications, setCurrentPage: setCurrentPageShopNotifications },
+        parkStatus: { filters: filtersParkStatus, setFilters: setFiltersParkStatus, setCurrentPage: setCurrentPageParkStatus },
+        localEvents: { filters: filtersLocalEvents, setFilters: setFiltersLocalEvents, setCurrentPage: setCurrentPageLocalEvents },
+        reports: { filters: filtersReports, setFilters: setFiltersReports, setCurrentPage: setCurrentPageReports },
+    };
+
+    const { filters, setFilters, setCurrentPage } = filterStateMap[table];
+    const newFilters = filters.includes(value)
+        ? filters.filter((item) => item !== value)
+        : [...filters, value];
+    setFilters(newFilters);
+    setCurrentPage(1);
+  };
+
   const handleAction = (type: 'add' | 'edit' | 'delete', itemType: string, data?: any) => {
     setAction({ type, itemType, data });
   };
   
-  const SortArrow = ({ columnKey, table }: { columnKey: string, table: keyof typeof sortConfig }) => {
-    if (sortConfig[table].key !== columnKey) {
+  const SortArrow = ({ columnKey, table }: { columnKey: string, table: string }) => {
+    const { config } = sortConfigMap[table];
+    if (config.key !== columnKey) {
       return <ArrowUpDown className="ml-2 h-4 w-4" />;
     }
-    return sortConfig[table].direction === 'ascending' ? '▲' : '▼';
+    return config.direction === 'ascending' ? '▲' : '▼';
   };
 
   const renderSkeleton = (columns: number) =>
     Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
       <TableRow key={i}>
-        <TableCell colSpan={columns}>
-          <Skeleton className="h-8 w-full" />
-        </TableCell>
+        {Array.from({ length: columns }).map((_, j) => (
+            <TableCell key={j}>
+                <Skeleton className="h-8 w-full" />
+            </TableCell>
+        ))}
       </TableRow>
   ));
 
-  const totalRoadDisruptionPages = Math.ceil(totalItems.roadDisruptions / ITEMS_PER_PAGE);
-  const totalShopNotificationPages = Math.ceil(totalItems.shopNotifications / ITEMS_PER_PAGE);
-  const totalParkStatusPages = Math.ceil(totalItems.parkStatus / ITEMS_PER_PAGE);
-  const totalLocalEventPages = Math.ceil(totalItems.localEvents / ITEMS_PER_PAGE);
-  const totalReportPages = Math.ceil(totalItems.reports / ITEMS_PER_PAGE);
+  const totalRoadDisruptionPages = Math.ceil(totalRoadDisruptions / ITEMS_PER_PAGE);
+  const totalShopNotificationPages = Math.ceil(totalShopNotifications / ITEMS_PER_PAGE);
+  const totalParkStatusPages = Math.ceil(totalParkStatus / ITEMS_PER_PAGE);
+  const totalLocalEventPages = Math.ceil(totalLocalEvents / ITEMS_PER_PAGE);
+  const totalReportPages = Math.ceil(totalReports / ITEMS_PER_PAGE);
 
   const renderForm = () => {
     if (!action || (action.type !== 'add' && action.type !== 'edit')) return null;
@@ -682,8 +724,8 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2">
                  <Input
                   placeholder="Search disruptions..."
-                  value={search.roadDisruptions}
-                  onChange={(e) => handleSearch('roadDisruptions', e.target.value)}
+                  value={searchRoadDisruptions}
+                  onChange={(e) => {setSearchRoadDisruptions(e.target.value); setCurrentPageRoadDisruptions(1);}}
                   className="w-full sm:w-auto"
                 />
                 <Button size="sm" className="gap-1" onClick={() => handleAction('add', 'Road Disruption')}>
@@ -720,7 +762,7 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading.roadDisruptions ? renderSkeleton(4) :
+                  {loadingRoadDisruptions ? renderSkeleton(4) :
                   roadDisruptions.length > 0 ? roadDisruptions.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
@@ -749,22 +791,22 @@ export default function AdminDashboardPage() {
             </CardContent>
              <CardFooter className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">
-                Page {currentPage.roadDisruptions} of {totalRoadDisruptionPages}
+                Page {currentPageRoadDisruptions} of {totalRoadDisruptionPages}
               </span>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange('roadDisruptions', currentPage.roadDisruptions - 1)}
-                  disabled={currentPage.roadDisruptions <= 1}
+                  onClick={() => setCurrentPageRoadDisruptions(p => p - 1)}
+                  disabled={currentPageRoadDisruptions <= 1}
                 >
                   Previous
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange('roadDisruptions', currentPage.roadDisruptions + 1)}
-                  disabled={currentPage.roadDisruptions >= totalRoadDisruptionPages}
+                  onClick={() => setCurrentPageRoadDisruptions(p => p + 1)}
+                  disabled={currentPageRoadDisruptions >= totalRoadDisruptionPages}
                 >
                   Next
                 </Button>
@@ -783,8 +825,8 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2">
                 <Input
                   placeholder="Search notifications..."
-                  value={search.shopNotifications}
-                  onChange={(e) => handleSearch('shopNotifications', e.target.value)}
+                  value={searchShopNotifications}
+                  onChange={(e) => {setSearchShopNotifications(e.target.value); setCurrentPageShopNotifications(1);}}
                   className="w-full sm:w-auto"
                 />
                 <DropdownMenu>
@@ -798,7 +840,7 @@ export default function AdminDashboardPage() {
                       <DropdownMenuCheckboxItem
                         key={status}
                         className="capitalize"
-                        checked={filters.shopNotifications.includes(status)}
+                        checked={filtersShopNotifications.includes(status)}
                         onCheckedChange={() => handleFilterChange('shopNotifications', status)}
                       >
                         {status}
@@ -840,7 +882,7 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                   {loading.shopNotifications ? renderSkeleton(4) : 
+                   {loadingShopNotifications ? renderSkeleton(4) : 
                    shopNotifications.length > 0 ? shopNotifications.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.name}</TableCell>
@@ -869,22 +911,22 @@ export default function AdminDashboardPage() {
             </CardContent>
             <CardFooter className="flex justify-between items-center">
                <span className="text-sm text-muted-foreground">
-                Page {currentPage.shopNotifications} of {totalShopNotificationPages}
+                Page {currentPageShopNotifications} of {totalShopNotificationPages}
               </span>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange('shopNotifications', currentPage.shopNotifications - 1)}
-                  disabled={currentPage.shopNotifications <= 1}
+                  onClick={() => setCurrentPageShopNotifications(p => p - 1)}
+                  disabled={currentPageShopNotifications <= 1}
                 >
                   Previous
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange('shopNotifications', currentPage.shopNotifications + 1)}
-                  disabled={currentPage.shopNotifications >= totalShopNotificationPages}
+                  onClick={() => setCurrentPageShopNotifications(p => p + 1)}
+                  disabled={currentPageShopNotifications >= totalShopNotificationPages}
                 >
                   Next
                 </Button>
@@ -901,8 +943,8 @@ export default function AdminDashboardPage() {
                <div className="flex items-center gap-2">
                 <Input
                   placeholder="Search parks..."
-                  value={search.parkStatus}
-                  onChange={(e) => handleSearch('parkStatus', e.target.value)}
+                  value={searchParkStatus}
+                  onChange={(e) => {setSearchParkStatus(e.target.value); setCurrentPageParkStatus(1);}}
                   className="w-full sm:w-auto"
                 />
                  <DropdownMenu>
@@ -916,7 +958,7 @@ export default function AdminDashboardPage() {
                       <DropdownMenuCheckboxItem
                         key={status}
                         className="capitalize"
-                        checked={filters.parkStatus.includes(status)}
+                        checked={filtersParkStatus.includes(status)}
                         onCheckedChange={() => handleFilterChange('parkStatus', status)}
                       >
                         {status}
@@ -958,7 +1000,7 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading.parkStatus ? renderSkeleton(4) : 
+                  {loadingParkStatus ? renderSkeleton(4) : 
                   parkStatus.length > 0 ? parkStatus.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.name}</TableCell>
@@ -987,22 +1029,22 @@ export default function AdminDashboardPage() {
             </CardContent>
              <CardFooter className="flex justify-between items-center">
                <span className="text-sm text-muted-foreground">
-                Page {currentPage.parkStatus} of {totalParkStatusPages}
+                Page {currentPageParkStatus} of {totalParkStatusPages}
               </span>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange('parkStatus', currentPage.parkStatus - 1)}
-                  disabled={currentPage.parkStatus <= 1}
+                  onClick={() => setCurrentPageParkStatus(p => p - 1)}
+                  disabled={currentPageParkStatus <= 1}
                 >
                   Previous
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange('parkStatus', currentPage.parkStatus + 1)}
-                  disabled={currentPage.parkStatus >= totalParkStatusPages}
+                  onClick={() => setCurrentPageParkStatus(p => p + 1)}
+                  disabled={currentPageParkStatus >= totalParkStatusPages}
                 >
                   Next
                 </Button>
@@ -1019,8 +1061,8 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2">
                 <Input
                     placeholder="Search events..."
-                    value={search.localEvents}
-                    onChange={(e) => handleSearch('localEvents', e.target.value)}
+                    value={searchLocalEvents}
+                    onChange={(e) => {setSearchLocalEvents(e.target.value); setCurrentPageLocalEvents(1);}}
                     className="w-full sm:w-auto"
                   />
                   <DropdownMenu>
@@ -1034,7 +1076,7 @@ export default function AdminDashboardPage() {
                         <DropdownMenuCheckboxItem
                           key={status}
                           className="capitalize"
-                          checked={filters.localEvents.includes(status)}
+                          checked={filtersLocalEvents.includes(status)}
                           onCheckedChange={() => handleFilterChange('localEvents', status)}
                         >
                           {status}
@@ -1082,7 +1124,7 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading.localEvents ? renderSkeleton(5) :
+                  {loadingLocalEvents ? renderSkeleton(5) :
                   localEvents.length > 0 ? localEvents.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium" data-speakable="true">{item.title}</TableCell>
@@ -1124,22 +1166,22 @@ export default function AdminDashboardPage() {
             </CardContent>
             <CardFooter className="flex justify-between items-center">
                <span className="text-sm text-muted-foreground">
-                Page {currentPage.localEvents} of {totalLocalEventPages}
+                Page {currentPageLocalEvents} of {totalLocalEventPages}
               </span>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange('localEvents', currentPage.localEvents - 1)}
-                  disabled={currentPage.localEvents <= 1}
+                  onClick={() => setCurrentPageLocalEvents(p => p - 1)}
+                  disabled={currentPageLocalEvents <= 1}
                 >
                   Previous
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange('localEvents', currentPage.localEvents + 1)}
-                  disabled={currentPage.localEvents >= totalLocalEventPages}
+                  onClick={() => setCurrentPageLocalEvents(p => p + 1)}
+                  disabled={currentPageLocalEvents >= totalLocalEventPages}
                 >
                   Next
                 </Button>
@@ -1158,8 +1200,8 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2">
                 <Input
                   placeholder="Search reports..."
-                  value={search.reports}
-                  onChange={(e) => handleSearch('reports', e.target.value)}
+                  value={searchReports}
+                  onChange={(e) => {setSearchReports(e.target.value); setCurrentPageReports(1);}}
                   className="w-full sm:w-auto"
                 />
                 <DropdownMenu>
@@ -1173,7 +1215,7 @@ export default function AdminDashboardPage() {
                       <DropdownMenuCheckboxItem
                         key={status}
                         className="capitalize"
-                        checked={filters.reports.includes(status)}
+                        checked={filtersReports.includes(status)}
                         onCheckedChange={() => handleFilterChange('reports', status)}
                       >
                         {status}
@@ -1221,7 +1263,7 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading.reports ? renderSkeleton(5) :
+                  {loadingReports ? renderSkeleton(6) :
                   reports.length > 0 ? reports.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell className="font-medium capitalize">{item.category.replace(/-/g, ' ')}</TableCell>
@@ -1255,7 +1297,7 @@ export default function AdminDashboardPage() {
                     </TableRow>
                   )) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24">
+                      <TableCell colSpan={6} className="text-center h-24">
                         No reports found.
                       </TableCell>
                     </TableRow>
@@ -1265,22 +1307,22 @@ export default function AdminDashboardPage() {
             </CardContent>
             <CardFooter className="flex justify-between items-center">
                <span className="text-sm text-muted-foreground">
-                Page {currentPage.reports} of {totalReportPages}
+                Page {currentPageReports} of {totalReportPages}
               </span>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange('reports', currentPage.reports - 1)}
-                  disabled={currentPage.reports <= 1}
+                  onClick={() => setCurrentPageReports(p => p - 1)}
+                  disabled={currentPageReports <= 1}
                 >
                   Previous
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange('reports', currentPage.reports + 1)}
-                  disabled={currentPage.reports >= totalReportPages}
+                  onClick={() => setCurrentPageReports(p => p + 1)}
+                  disabled={currentPageReports >= totalReportPages}
                 >
                   Next
                 </Button>
@@ -1341,3 +1383,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
