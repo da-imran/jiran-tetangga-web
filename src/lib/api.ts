@@ -5,7 +5,8 @@ type ApiOptions = Omit<RequestInit, 'body'> & {
     body?: any;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const ENVIRONMENT = process.env.ENVIRONMENT ?? 'local';
+const API_BASE_URL = ENVIRONMENT === 'dev' ? process.env.NEXT_PUBLIC_API_BASE_URL : 'http://localhost:3500/jiran-tetangga/v1';
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
 const getAuthToken = () => {
