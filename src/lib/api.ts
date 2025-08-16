@@ -1,4 +1,3 @@
-
 type ApiOptions = Omit<RequestInit, 'body'> & {
     params?: Record<string, any>;
     pathParams?: Record<string, string | number>;
