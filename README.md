@@ -1,6 +1,6 @@
 # 🏡 JiranTetangga
 
-A full-stack project designed to help residents of a dense neighbourhood in **Sungai Tiram, Penang** stay informed about local updates, report issues, and stay connected through a WhatsApp-integrated system. This repository is the frontend part of the whole project and built with Firebase Studio.
+A full-stack project designed to help residents of a dense neighbourhood in **Sungai Tiram, Penang** stay informed about local updates and report issues. This repository is the frontend part of the whole project and built with Firebase AI Studio.
 
 ## 🚀 Features
 - 📢 Get real-time updates on:
