@@ -27,7 +27,7 @@ const apiFetch = async (endpoint: string, options: ApiOptions = {}) => {
     }
 
     // Build URL with query parameters
-    const url = new URL(`${API_BASE_URL}${processedEndpoint}`);
+    const url = new URL(`${API_URL}${processedEndpoint}`);
     if (options.params) {
         Object.entries(options.params).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
