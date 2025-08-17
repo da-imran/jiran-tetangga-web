@@ -1,14 +1,12 @@
-
 type ApiOptions = Omit<RequestInit, 'body'> & {
     params?: Record<string, any>;
     pathParams?: Record<string, string | number>;
     body?: any;
 };
 
-const API_BASE_URL = 'http://localhost:3500/jiran-tetangga/v1';
-const API_ENV = process.env.NEXT_PUBLIC_API_ENV;
-const API_URL = API_ENV === 'production' ? process.env.NEXT_PUBLIC_API_HOST : API_BASE_URL;
-const API_KEY = 'jxdMegN9KOAZMwMCfIbV';
+const ENVIRONMENT = process.env.ENVIRONMENT ?? 'local';
+const API_BASE_URL = ENVIRONMENT === 'dev' ? process.env.NEXT_PUBLIC_API_BASE_URL : 'http://localhost:3500/jiran-tetangga/v1';
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
 const getAuthToken = () => {
     if (typeof window === 'undefined') {
@@ -40,7 +38,7 @@ const apiFetch = async (endpoint: string, options: ApiOptions = {}) => {
 
     const headers = new Headers({
         'Content-Type': 'application/json',
-        'X-API-Key': API_KEY,
+        'x-api-key': API_KEY ?? '',
         ...options.headers,
     });
 

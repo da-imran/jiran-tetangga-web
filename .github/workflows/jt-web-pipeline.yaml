@@ -6,6 +6,7 @@ on:
 
 jobs:
   build:
+    name: GitHub Actions Building Application
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -21,7 +22,8 @@ jobs:
       run: npm install
     - name: Done
       run: echo "CI pipeline completed for push to branch"
-
+  
+  # Commented out since not used it for a while, you can setup with your own credentials
   deploy-preview:
     name: GitHub Actions Vercel Preview Deployment
     runs-on: ubuntu-latest

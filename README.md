@@ -11,7 +11,7 @@ A full-stack project designed to help residents of a dense neighbourhood in **Su
   - Park conditions
 - 📬 Residents can report damages or concerns
 - 🧠 Admin system for managing updates
-- 🤖 WhatsApp bot integration
+- 🤖 Discord Webhook Notifications
 - 🐳 Docker support + local and cloud deployment ready
 
 ---
@@ -24,9 +24,9 @@ A full-stack project designed to help residents of a dense neighbourhood in **Su
 | Backend      | Node.js + Express    |
 | Database     | MongoDB              |
 | Auth         | AES / JWT |
-| Messaging    | WhatsApp Bot	|
+| Notification | Discord Webhook	|
 | Container    | Docker, Docker Compose |
-| CI Pipeline  | Github Action     |
+| CI/CD Pipeline  | Github Action     |
 | Testing      | Chai / Sinon / Mocha	|
 
 ---
@@ -36,78 +36,33 @@ A full-stack project designed to help residents of a dense neighbourhood in **Su
 jiran-tetangga-web/
 ├── LICENSE
 ├── README.md
-├── apphosting.yaml
-├── components.json
-├── next.config.ts
-├── package-lock.json
-├── package.json
-├── postcss.config.mjs
-├── tailwind.config.ts
-├── tsconfig.json
-├── .idx/
-│   └── dev.nix
-├── .vscode/
-│   └── settings.json
-├── docs/
-│   └── blueprint.md
+├── package.json             # Project dependencies and scripts
+├── next.config.ts           # Next.js configuration
+├── tsconfig.json            # TypeScript configuration
+├── .env                     # Environment variables
 ├── src/
-│   ├── ai/
-│   │   ├── dev.ts
-│   │   └── genkit.ts
-│   ├── app/
-│   │   ├── admin/
-│   │   │   └── page.tsx
-│   │   ├── profile/
-│   │   │   └── page.tsx
-│   │   ├── favicon.ico
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── components/
-│   │   ├── ui/
-│   │   │   ├── accordion.tsx
-│   │   │   ├── alert-dialog.tsx
-│   │   │   ├── alert.tsx
-│   │   │   ├── avatar.tsx
-│   │   │   ├── badge.tsx
-│   │   │   ├── button.tsx
-│   │   │   ├── calendar.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── chart.tsx
-│   │   │   ├── checkbox.tsx
-│   │   │   ├── dialog.tsx
-│   │   │   ├── dropdown-menu.tsx
-│   │   │   ├── form.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── label.tsx
-│   │   │   ├── menubar.tsx
-│   │   │   ├── popover.tsx
-│   │   │   ├── progress.tsx
-│   │   │   ├── radio-group.tsx
-│   │   │   ├── scroll-area.tsx
-│   │   │   ├── select.tsx
-│   │   │   ├── separator.tsx
-│   │   │   ├── sheet.tsx
-│   │   │   ├── sidebar.tsx
-│   │   │   ├── skeleton.tsx
-│   │   │   ├── slider.tsx
-│   │   │   ├── switch.tsx
-│   │   │   ├── table.tsx
-│   │   │   ├── tabs.tsx
-│   │   │   ├── textarea.tsx
-│   │   │   ├── toast.tsx
-│   │   │   ├── toaster.tsx
-│   │   │   └── tooltip.tsx
-│   │   ├── dashboard-card.tsx
-│   │   ├── header.tsx
-│   │   └── issue-report-form.tsx
-│   ├── hooks/
-│   │   ├── use-mobile.tsx
-│   │   └── use-toast.ts
-│   └── lib/
-│       └── utils.ts
+│   ├── ai/                  # AI integrations/code
+│   │   └── dev.ts           # AI development entry point
+│   ├── app/                 # Next.js App Router
+│   │   ├── admin/           # Admin dashboard pages
+│   │   │   └── page.tsx     # Admin dashboard main page
+│   │   ├── profile/         # User profile pages
+│   │   │   └── page.tsx     # User profile main page
+│   │   ├── globals.css      # Global styles
+│   │   └── layout.tsx       # Root layout for the application
+│   ├── components/          # Reusable React components
+│   │   ├── ui/              # UI components (likely from a library like Shadcn UI)
+│   │   │   └── ...          # Individual UI component files
+│   │   └── ...              # Other custom components (e.g., header, forms)
+│   ├── hooks/               # Custom React hooks
+│   │   └── use-toast.ts     # Example hook for toasts
+│   ├── lib/                 # Utility functions and libraries
+│   │   └── api.ts           # API client\
+├── public/                  # Static assets (images, fonts, favicon)
+│   └── ...
+├── docs/                    # Project documentation
+│   └── blueprint.md         # Project blueprint
 ```
-
 ---
 
 ## Frontend Technology Stack
@@ -124,6 +79,13 @@ jiran-tetangga-web/
 2.  **Install dependencies:** Run `npm install` or `yarn install` in the project root.
 3.  **Run locally:** Start the development server with `npm run dev` or `yarn dev`.
 4.  **Run with Docker:** Run `docker compose up --build -d` in the project root.
+5.  Environment Setup
+ Create a .env file
+```bash
+NEXT_PUBLIC_API_BASE_URL='your localhost URI'
+NEXT_PUBLIC_API_KEY='any random string'
+```
+<i>Sensitive information such as NEXT_PUBLIC_API_KEY, ENCRYPTION_KEY can be store using the Infisical secrets tools or you can just use any string for testing purposes</i>
 
 ## 📦 Docker Support 
 1.  Docker support has been built into the project
@@ -138,8 +100,8 @@ jiran-tetangga-web/
 [x] Modular Express routing </br>
 [x] NextJS frontend dashboard with Firebase Studio </br>
 [x] Docker support </br>
-[] WhatsApp bot notification </br>
-[x] CI pipeline with Github Actions </br>
+[x] CI/CD pipeline with Github Actions </br>
+[] Discord webhook notification </br>
 
 ## 🤝 Contributing
 
