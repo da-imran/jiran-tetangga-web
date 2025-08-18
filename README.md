@@ -83,6 +83,7 @@ jiran-tetangga-web/
 ```bash
 NEXT_PUBLIC_API_BASE_URL='your localhost URI'
 NEXT_PUBLIC_API_KEY='any random string'
+ENVIRONMENT='dev'
 ```
 <i>Sensitive information such as NEXT_PUBLIC_API_KEY, ENCRYPTION_KEY can be store using the Infisical secrets tools or you can just use any string for testing purposes</i>
 
@@ -100,7 +101,7 @@ NEXT_PUBLIC_API_KEY='any random string'
 [x] NextJS frontend dashboard with Firebase Studio </br>
 [x] Docker support </br>
 [x] CI/CD pipeline with Github Actions </br>
-[] Discord webhook notification </br>
+[x] Discord webhook notification </br>
 
 ## 🤝 Contributing
 
