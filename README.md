@@ -101,7 +101,7 @@ ENVIRONMENT='dev'
 [x] NextJS frontend dashboard with Firebase Studio </br>
 [x] Docker support </br>
 [x] CI/CD pipeline with Github Actions </br>
-[] Discord webhook notification </br>
+[x] Discord webhook notification </br>
 
 ## 🤝 Contributing
 
